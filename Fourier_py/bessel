@@ -1,0 +1,4 @@
+from scipy import special
+import math
+
+b1 = special.jv(1,math.pi)

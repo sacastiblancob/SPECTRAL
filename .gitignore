@@ -1,0 +1,15 @@
+*.rar
+*.PNG
+*.o
+*~
+*.txt
+*.ods
+*.swp
+*.out
+*.mod
+.~lock*
+*.nc
+*.dat
+*.xml
+.DS_Store
+*.bk
