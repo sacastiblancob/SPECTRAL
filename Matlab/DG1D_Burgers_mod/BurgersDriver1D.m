@@ -11,6 +11,7 @@ Globals1D;
 
 % Order of polymomials used for approximation
 N = 12;
+deal = 0.0;     %1.0 for dealiasing, 0.0 for non-dealiasing
 
 % Generate simple mesh
 xL = -1;
@@ -23,7 +24,7 @@ StartUp1D;
 
 %init Filter matrix
 %filter = ?
-filter = 1.0;
+filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
 
 if filter==1.0
     Nc=3;   %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
@@ -35,8 +36,8 @@ end
 
 % Set initial conditions
 %epsilon = 0.05;      %original
-%epsilon = 0.000001;      %viscosity constant
-epsilon = 0.0;
+epsilon = 0.001;      %viscosity constant
+%epsilon = 0.0;
 %u = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0;    %original Intitial C.
 %u = (x<-0.5)*2;     %step initial condition
 u = -sin(2*pi*x/(xR-xL));
@@ -172,7 +173,24 @@ for tstep=1:Nsteps
         %
         %  DFDD, local derivatives of field
         %
-          dfdr = Dr * ( u .^ 2 / 2 - sqrt ( epsilon ) * q ); 
+          %dfdr = Dr * ( u .^ 2 / 2 - sqrt ( epsilon ) * q );       %original
+          
+          if deal==1.0
+              %umd = invV*u;             %u modal
+              umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
+              ud = Vd*umd;                                              %going to nodal with more nodes
+              dfdrd = Drd * ( ud .^ 2 / 2);                             %computing non-linear term with more nodes
+              %dfdrd = ud .^ 2;
+              umd = invVd*dfdrd;                                        %putting the non-linear result in modal
+              umd = umd(1:N+1,:);                                       %extracting the padding part
+              ud = V*umd;                                               %going back to original nodal
+
+              dfdr = ud - Dr * (sqrt ( epsilon ) * q );                 %computing the discretized term
+              %dfdr = Dr * ( (ud ./ 2) - sqrt ( epsilon ) * q );  
+          else
+              dfdr = Dr * ( u .^ 2 / 2 - sqrt ( epsilon ) * q );
+          end
+          
         %
         %  Compute right hand sides of the semi-discrete PDE
         %
@@ -282,7 +300,7 @@ for tstep=1:Nsteps
       drawnow;
       hold off
     end
-    pause(0.05)
+    %pause(0.05)
     
 %     %ploting
 %     xv = reshape(x,1,[]);
@@ -308,13 +326,13 @@ plot(T,E+Ev+Evf+Enlf)
 legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
 title('Energy vs Time, \nu=0.0, \Omega = whole domain')
 %ylim([-E(1)/10 E(1)+E(1)/5])
-ylim([-0.1 1.1])
+ylim([-0.1 1.6])
 xlim([T(1) T(tstep+1)])
 %xlim([T(1) 0.8])
 ylabel('Energy')
 xlabel('Time')
 % 
-% a=6;
+% a=5;
 % liminf = min([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])-EEt(1,a)/10;
 % limsup = max([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])+EEt(1,a)/1.5;
 % 
@@ -325,7 +343,7 @@ xlabel('Time')
 % plot(T,nfEEt(:,a))
 % plot(T,Econ(:,a))
 % legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
-% title('Energy vs Time, \nu=0.05, \Omega = 6th domain')
+% title('Energy vs Time, \nu=0.0, \Omega = 5th domain')
 % %ylim([liminf limsup])
 % %ylim([-0.22 0.32])
 % ylim([-0.5 0.2])

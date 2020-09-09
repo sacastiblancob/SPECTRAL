@@ -40,6 +40,7 @@
 %  where V is the Vandermonde matrix, and VR is the gradient of V.
 %
 global Dr
+global Drd
 %
 %  EToE(1:K,1:Nfaces) is the element-to-element connectivity array.
 %
@@ -65,6 +66,7 @@ global Fx
 %  invV(1:N+1,1:N+1) is the inverse of V, the Vandermonde matrix.
 %
 global invV
+global invVd
 %
 %  J(?,?) is the metric element for the local mapping of the 1D elements.
 %
@@ -93,6 +95,7 @@ global mapO
 %  N is the order of the polynomials used for approximation.
 %
 global N
+global Nd
 %
 %  Nfaces is 2, the number of "faces" each element has.
 %
@@ -118,14 +121,17 @@ global nx
 %  r(1:N+1) contains the Gauss-Lobatto quadrature points for [-1,+1] of order N.
 %
 global r
+global rd
 %
 %  x(1:N+1) cotains the Gauss-Lobatto quadrature weights
 %
 global w
+global wd
 %
 %  W(diag(w)) contains in the diagonal the GLL quadrature weights
 %
 global W
+global Wd
 %
 %  rk4a(1:5): Runge-Kutta coefficients:
 %
@@ -146,6 +152,7 @@ global rx
 %  V(1:N+1,1:N+1) is the Vandermonde matrix.
 %
 global V
+global Vd
 global vmapB
 global vmapI
 %
@@ -164,6 +171,7 @@ global VX
 %  indexed by local node index and element.
 %
 global x
+global xd
 %
 rk4a = [            0.0 ...
         -567301805773.0/1357537059087.0 ...

@@ -44,19 +44,43 @@ NODETOL = 1e-10;
 Np = N + 1; 
 Nfp = 1; 
 Nfaces = 2;
+
+%  Dealiasing roots and points
+if deal==1
+    Nd = ceil((3/2)*(N+1))-1;
+    rd = JacobiGL(0,0,Nd);
+    wd = gllw(Nd);
+    Wd = spdiags(wd',0,Nd+1,Nd+1);
+    Cd = ones(Nd+1,1);
+    Cd(Nd+1) = Nd/(2*Nd + 1);
+    Cd = spdiags(Cd,0,Nd+1,Nd+1);
+end
+
 %
 %  Compute basic Legendre-Gauss-Lobatto grid
 %
 r = JacobiGL ( 0, 0, N );
 w = gllw(N);
 W = spdiags(w',0,N+1,N+1);
+C = ones(N+1,1);
+C(N+1) = N/(2*N + 1);
+C = spdiags(C,0,N+1,N+1);
+
 %
 %  Build reference element matrices
 %
 %V  = Vandermonde1D ( N, r ); 
 V = Vandermonde1D (0,0,N,r);
-invV = inv ( V );
+%invV = inv ( V );
+invV = C*V'*W;
 Dr = Dmatrix1D ( N, r, V );
+
+%For dealiasing
+if deal==1
+    Vd = Vandermonde1D(0,0,Nd,rd);
+    invVd = Cd*Vd'*Wd;
+    Drd = Dmatrix1D(Nd,rd,Vd);
+end
 %
 %  Create surface integral terms
 %
