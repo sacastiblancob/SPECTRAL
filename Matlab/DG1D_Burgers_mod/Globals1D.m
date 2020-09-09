@@ -71,6 +71,7 @@ global invVd
 %  J(?,?) is the metric element for the local mapping of the 1D elements.
 %
 global J
+global Jd   %Jacobian for more nodes version (Daliasing and integration)
 %
 %  K is the number of elements.
 %
@@ -148,6 +149,7 @@ global rk4c
 %  rx(?,?) is the inverse of J.
 %
 global rx
+global rxd      %for more nodes and dealiasing versions
 %
 %  V(1:N+1,1:N+1) is the Vandermonde matrix.
 %

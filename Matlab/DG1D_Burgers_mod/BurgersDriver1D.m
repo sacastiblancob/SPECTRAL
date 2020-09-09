@@ -6,38 +6,53 @@
 %           epsilon = 0.1
 %           u(x,0) = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0
 
-
+clear
+clc
 Globals1D;
 
+%%
+%CONTROL PANEL
 % Order of polymomials used for approximation
 N = 12;
+
+%dealiasing??
 deal = 0.0;     %1.0 for dealiasing, 0.0 for non-dealiasing
+
+%improved integration??
+iint = 1.0;     %1.0 for immproved integration, 0.0 for not
+
+%init Filter matrix
+%filter = ?
+filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
+t = 2;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
+Nc=3;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
+if t==2
+    s=34;           % exponential filter degree
+else
+    s=34;           % exponential filter degree
+end
+%viscosity constant
+%epsilon = 0.05;      %original
+%epsilon = 0.001;      %viscosity constant
+epsilon = 0.001;
 
 % Generate simple mesh
 xL = -1;
 xR = 1;
 Elements = 12;
 [Nv, VX, K, EToV] = MeshGen1D(xL,xR,Elements);
+%END CONTROL PANEL
+%%
 
 % Initialize solver and construct grid and metric
 StartUp1D;
 
-%init Filter matrix
-%filter = ?
-filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
-
 if filter==1.0
-    Nc=3;   %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
-    s=36;
-    t = 0;  % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
     %last parameter (t) means type,
     F = Filter1D(N,Nc,s,t);
 end
 
 % Set initial conditions
-%epsilon = 0.05;      %original
-epsilon = 0.001;      %viscosity constant
-%epsilon = 0.0;
 %u = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0;    %original Intitial C.
 %u = (x<-0.5)*2;     %step initial condition
 u = -sin(2*pi*x/(xR-xL));
@@ -71,8 +86,8 @@ xmin = min(abs(x(1,:)-x(2,:)));
 CFL = 0.25;
 umax = max(max(abs(u)));
 %dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
-%dt = 0.1*CFL*(xmin/umax);
-dt = CFL*(xmin/umax);
+dt = 0.1*CFL*(xmin/umax);
+%dt = CFL*(xmin/umax);
 %dt = 3.1776e-04;
 Nsteps = ceil(FinalTime/dt);
 dt = FinalTime/Nsteps; 
@@ -204,7 +219,15 @@ for tstep=1:Nsteps
         
         %disipation over boundaries
         %Fscale = 1/jacobiano en las fronteras de los elementos
-        deru = Dr*u./J;
+        
+        if iint==0
+            deru = Dr*u./J;        %without more nodes
+        else
+            umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
+            ud = Vd*umd;                                              %going to nodal with more nodes
+            deru = Drd*ud./Jd;
+        end
+        
         dflux = 2*epsilon.*u([1 N+1],:).*deru([1 N+1],:);
         dflux = (dflux(2,:) - dflux(1,:));
         
@@ -213,8 +236,12 @@ for tstep=1:Nsteps
         nflux = -(nflux(2,:) - nflux(1,:));
         
         %dissipation term
-        edis = -(2*epsilon*w*(((deru).^2).*J));
-        
+        if iint==0
+            edis = -(2*epsilon*w*(((deru).^2).*J));
+        else
+            edis = -(2*epsilon*wd*(((deru).^2).*Jd));
+        end
+            
       %solving energy
       %RHSE of energy equation integrated over a domain
       %rhse = edis; %dflux + nflux + edis;
@@ -243,9 +270,18 @@ for tstep=1:Nsteps
 %     ua = analitica(x,time+dt,epsilon);
         
     % computing energy before filtering
-    Et = u.^2;
-    %Eele = 0.5*w*(Et.*J);
-    EEt(tstep+1,:) = w*(Et.*J);
+    if iint == 0
+        Et = u.^2;
+        
+        EEt(tstep+1,:) = w*(Et.*J);    %computing integral with default nodes
+    else
+        umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
+        ud = Vd*umd;    %to nodal with more modes
+        Et = ud.^2;     %squaring
+        
+        EEt(tstep+1,:) = wd*(Et.*Jd);   %computing integral with more nodes
+    end
+        
     E(tstep+1) = sum(EEt(tstep+1,:));
     
 %     %Computing dissipate energy due to viscosity
@@ -284,22 +320,22 @@ for tstep=1:Nsteps
     %
     %  Display solution on every 10th time step.
     %
-    if ( rem ( tstep, 10 ) == 0 )
-%       %ploting analytical
-%       plot(x,ua,'k')
-%       hold on
-      
-      for i = 1 : Elements
-        plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
-          'Markersize', 1, 'LineWidth', 2 );
-        hold all
-      end
-      grid ( 'on' );
-      axis ( [ xL, xR, uBott, uUp ] );
-      
-      drawnow;
-      hold off
-    end
+%     if ( rem ( tstep, 10 ) == 0 )
+% %       %ploting analytical
+% %       plot(x,ua,'k')
+% %       hold on
+%       
+%       for i = 1 : Elements
+%         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+%           'Markersize', 1, 'LineWidth', 2 );
+%         hold all
+%       end
+%       grid ( 'on' );
+%       axis ( [ xL, xR, uBott, uUp ] );
+%       
+%       drawnow;
+%       hold off
+%     end
     %pause(0.05)
     
 %     %ploting
@@ -314,6 +350,7 @@ end
 
 Econ = EEt + dEEt + dfEEt + nfEEt;
 
+hold on
 plot(T,E)
 hold on
 plot(T,Ev)
@@ -322,8 +359,10 @@ plot(T,Evf)
 hold on
 plot(T,Enlf)
 hold on
-plot(T,E+Ev+Evf+Enlf)
+Ebal = E+Ev+Evf+Enlf;
+plot(T,Ebal)
 legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
+%legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
 title('Energy vs Time, \nu=0.0, \Omega = whole domain')
 %ylim([-E(1)/10 E(1)+E(1)/5])
 ylim([-0.1 1.6])

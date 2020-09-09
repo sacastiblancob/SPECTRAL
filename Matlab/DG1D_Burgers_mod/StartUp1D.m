@@ -46,7 +46,7 @@ Nfp = 1;
 Nfaces = 2;
 
 %  Dealiasing roots and points
-if deal==1
+if (deal==1 || iint==1)
     Nd = ceil((3/2)*(N+1))-1;
     rd = JacobiGL(0,0,Nd);
     wd = gllw(Nd);
@@ -76,7 +76,7 @@ invV = C*V'*W;
 Dr = Dmatrix1D ( N, r, V );
 
 %For dealiasing
-if deal==1
+if (deal==1 || iint==1)
     Vd = Vandermonde1D(0,0,Nd,rd);
     invVd = Cd*Vd'*Wd;
     Drd = Dmatrix1D(Nd,rd,Vd);
@@ -90,11 +90,25 @@ LIFT = Lift1D ( );
 %
 va = EToV(:,1)'; 
 vb = EToV(:,2)';
+%normal version
 x = ones(N+1,1) * VX(va) + 0.5 * (r+1) * (VX(vb)-VX(va));
+
+%dealiasing or more nodes version
+if iint==1
+    xd = ones(Nd+1,1) * VX(va) + 0.5 * (rd+1) * (VX(vb)-VX(va));
+end
+    
 %
 %  Calculate geometric factors
 %
+
+%for normal version
 [rx,J] = GeometricFactors1D ( x, Dr );
+
+%dealiasing version
+if iint==1
+    [rxd,Jd] = GeometricFactors1D ( xd, Drd );
+end
 %
 %  Compute masks for edge nodes
 %
@@ -107,6 +121,10 @@ Fx = x(Fmask(:), :);
 %
 [nx] = Normals1D();
 Fscale = 1 ./ (J(Fmask,:));
+if iint==1
+    Fscaled = 1 ./ (Jd(Fmask,:));
+end
+
 %
 %  Build connectivity matrix
 %
