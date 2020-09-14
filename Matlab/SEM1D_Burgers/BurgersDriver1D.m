@@ -13,11 +13,14 @@ Globals1D;
 N = 8;
 
 % epsilon = sqrt(viscosity)
-epsilon = 0.1;
+%epsilon = 0.01;
+%nu = epsilon^2;
+nu = 0.05;
+epsilon = sqrt(nu);
 
 %init Filter matrix
 %filter = ?
-filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
+filter = 0.0;   %1.0 for filtering, 0.0 for non-filtering
 t = 2;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
 Nc=3;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
 if t==2
@@ -74,9 +77,13 @@ time = 0.0;
       timelocal = time + rk4c(INTRK)*dt;
       %[rhsu] = BurgersRHS1D(u,epsilon,xL,xR,timelocal);
       %uv(1) = exp(-(xv(1)-vel*timelocal).^2/sqrt(0.01));
-      uv(1) = uv(Ns);
+      uv(1) = 0;
+      uv(Ns) = 0;
       %uv(Ns) = exp(-(xv(Ns)-vel*timelocal).^2/sqrt(0.01));
-      rhsu = -1.0.*AG*(uv.^2); 
+      rhsu = -1.0.*AG*(uv.^2);
+      if nu ~= 0
+        rhsu = (nu*SG)\rhsu;
+      end
       resu = rk4a(INTRK)*resu + dt*rhsu;
       uv = uv+rk4b(INTRK)*resu;
     end

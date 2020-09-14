@@ -73,23 +73,33 @@ x = ones(N+1,1) * VX(va) + 0.5 * (r+1) * (VX(vb)-VX(va));
 %
 %  Create mass matrix
 %
-w = gllw(N);
+w = gllw(N)';
 W = diag(w);
-M=zeros(Np,Np);
-for i=1:Np
-  %M(i,i)=wg(i)*dx1/2.0;
-  M(i,i) = w(i);
-end
+M = W;
+% M=zeros(Np,Np);
+% for i=1:Np
+%   %M(i,i)=wg(i)*dx1/2.0;
+%   M(i,i) = w(i);
+% end
 
 %
 %  Create Advection matrix
 %
-A=zeros(Np,Np);
-for i=1:Np
-  for j=1:Np
-    A(i,j)=Dr(i,j)*w(i);
-  end
-end
+A = Dr.*w;
+% A=zeros(Np,Np);
+% for i=1:Np
+%   for j=1:Np
+%     A(i,j)=Dr(i,j)*w(i);
+%   end
+% end
+
+%
+%  Create Stiffness matrix
+%
+%S=zeros(Np,Np);
+%S = Dr'*(A);
+%S = Dr'*Dr;
+S = Dr'*W*Dr;
 
 %
 %  Global Assembly
@@ -97,11 +107,14 @@ end
 Ns=((K-1)*(Np-1))+Np;
 AG=zeros(Ns,Ns);
 MG=zeros(Ns,Ns);
+SG=zeros(Ns,Ns);
 ap=0;
 for k=1:K
   for i=1:Np
     for j=1:Np
-      AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + A(i,j);
+      SG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = SG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + S(i,j)*J(i,k);
+        
+      AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + A(i,j)*J(i,k);
 
       MG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = MG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + M(i,j)*J(i,k);
     end
@@ -120,10 +133,15 @@ end
 %  For solve in time
 %
 AG = MG*AG;
-% AG(1,:) = 0.0;
-% AG(Ns,:) = 0.0;
-% AG(1,1) = 1;
-% AG(Ns,Ns) = 1;
+SG = MG*SG;
+AG(1,:) = 0.0;
+AG(Ns,:) = 0.0;
+AG(1,1) = 1;
+AG(Ns,Ns) = 1;
+SG(1,:) = 0.0;
+SG(Ns,:) = 0.0;
+SG(1,1) = 1;
+SG(Ns,Ns) = 1;
 
 %
 %  reordering x

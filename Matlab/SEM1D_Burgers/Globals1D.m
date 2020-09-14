@@ -45,11 +45,13 @@ global Dr
 %
 global M
 global A
+global S
 %
 %  Global Mass and Advection matrices.
 %
 global MG
 global AG
+global SG
 %
 %  EToE(1:K,1:Nfaces) is the element-to-element connectivity array.
 %
