@@ -57,7 +57,8 @@ Dr = Dmatrix1D ( N, r, V );
 %
 %  Create surface integral terms
 %
-LIFT = Lift1D ( );
+%LIFT = Lift1D ( );
+
 %
 %  Build coordinates of all the nodes
 %
@@ -68,24 +69,90 @@ x = ones(N+1,1) * VX(va) + 0.5 * (r+1) * (VX(vb)-VX(va));
 %  Calculate geometric factors
 %
 [rx,J] = GeometricFactors1D ( x, Dr );
+
 %
-%  Compute masks for edge nodes
+%  Create mass matrix
 %
-fmask1 = find( abs(r+1) < NODETOL)'; 
-fmask2 = find( abs(r-1) < NODETOL)';
-Fmask  = [fmask1;fmask2]';
-Fx = x(Fmask(:), :);
+w = gllw(N);
+W = diag(w);
+M=zeros(Np,Np);
+for i=1:Np
+  %M(i,i)=wg(i)*dx1/2.0;
+  M(i,i) = w(i);
+end
+
 %
-%  Build surface normals and inverse metric at surface
+%  Create Advection matrix
 %
-[nx] = Normals1D();
-Fscale = 1 ./ (J(Fmask,:));
+A=zeros(Np,Np);
+for i=1:Np
+  for j=1:Np
+    A(i,j)=Dr(i,j)*w(i);
+  end
+end
+
 %
-%  Build connectivity matrix
+%  Global Assembly
 %
-[EToE, EToF] = Connect1D ( EToV );
+Ns=((K-1)*(Np-1))+Np;
+AG=zeros(Ns,Ns);
+MG=zeros(Ns,Ns);
+ap=0;
+for k=1:K
+  for i=1:Np
+    for j=1:Np
+      AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + A(i,j);
+
+      MG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = MG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + M(i,j)*J(i,k);
+    end
+  end
+  ap=ap+1;
+end
+
 %
-%  Build connectivity maps
+%  Inversion of matrix MG
 %
-[ vmapM, vmapP, vmapB, mapB ] = BuildMaps1D ( );
+for i=1:Ns
+    MG(i,i) = 1/MG(i,i);
+end
+
+%
+%  For solve in time
+%
+AG = MG*AG;
+% AG(1,:) = 0.0;
+% AG(Ns,:) = 0.0;
+% AG(1,1) = 1;
+% AG(Ns,Ns) = 1;
+
+%
+%  reordering x
+%
+xv = zeros(Ns,1);
+xv(1) = xL;
+xv(Ns) = xR;
+for k = 1:K
+    xv((Np-1)*(k-1)+2:(Np-1)*(k)+1) = x(2:Np,k);
+end
+
+% %
+% %  Compute masks for edge nodes
+% %
+% fmask1 = find( abs(r+1) < NODETOL)'; 
+% fmask2 = find( abs(r-1) < NODETOL)';
+% Fmask  = [fmask1;fmask2]';
+% Fx = x(Fmask(:), :);
+% %
+% %  Build surface normals and inverse metric at surface
+% %
+% [nx] = Normals1D();
+% Fscale = 1 ./ (J(Fmask,:));
+% %
+% %  Build connectivity matrix
+% %
+% [EToE, EToF] = Connect1D ( EToV );
+% %
+% %  Build connectivity maps
+% %
+% [ vmapM, vmapP, vmapB, mapB ] = BuildMaps1D ( );
 

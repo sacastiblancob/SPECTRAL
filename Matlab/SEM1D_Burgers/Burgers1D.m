@@ -47,35 +47,42 @@ function [ u ] = Burgers1D ( u, epsilon, xL, xR, FinalTime )
 %
 %  Runge-Kutta residual storage  
 %
-  resu = zeros(Np,K); 
+  %resu = zeros(Np,K);
+  resu = zeros(Ns,1);
 %
 %  Compute time step size
 %
   xmin = min(abs(x(1,:)-x(2,:)));
   CFL = 0.25;
-  umax = max(max(abs(u)));
+  umax = max(max(abs(uv)));
   dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));
   Nsteps = ceil(FinalTime/dt);
   dt = FinalTime/Nsteps; 
 %
 %  Outer time step loop 
 %
+  vel = 1.1;
   for tstep=1:Nsteps
 
     for INTRK = 1:5
       timelocal = time + rk4c(INTRK)*dt;
-      [rhsu] = BurgersRHS1D(u,epsilon,xL,xR,timelocal);
+      %[rhsu] = BurgersRHS1D(u,epsilon,xL,xR,timelocal);
+      %uv(1) = exp(-(xv(1)-vel*timelocal).^2/sqrt(0.01));
+      uv(1) = uv(Ns);
+      %uv(Ns) = exp(-(xv(Ns)-vel*timelocal).^2/sqrt(0.01));
+      %rhsu = -1.0*vel*AG*uv;
+      rhsu = -1.0.*uv.*(AG*uv); 
       resu = rk4a(INTRK)*resu + dt*rhsu;
-      u = u+rk4b(INTRK)*resu;
+      uv = uv+rk4b(INTRK)*resu;
     end
     time = time + dt;
     
     %ploting
-    xv = reshape(x,1,[]);
-    uv = reshape(u,1,[]);
+%     xv = reshape(x,1,[]);
+%     uv = reshape(u,1,[]);
     plot(xv,uv);
     xlim([xL xR]);
-    ylim([0 2.1]);
+    ylim([-1.1 1.1]);
     drawnow
     
   end

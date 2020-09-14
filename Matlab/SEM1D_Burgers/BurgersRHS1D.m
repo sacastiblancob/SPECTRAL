@@ -41,7 +41,7 @@ function [ rhsu ] = BurgersRHS1D ( u, epsilon, xL, xR, time )
 %  Define field differences at faces of the K elements.
 %
   du = zeros(Nfp*Nfaces,K); 
-  du(:) = u(vmapM) - u(vmapP);
+  %du(:) = u(vmapM) - u(vmapP);
 %
 %  Impose boundary condition at x=0
 %
@@ -53,11 +53,13 @@ function [ rhsu ] = BurgersRHS1D ( u, epsilon, xL, xR, time )
 %  Compute Q.
 %
   q = sqrt ( epsilon ) * ( rx .* ( Dr * u ) - LIFT*(Fscale.*(nx.*du/2.0)));
+%   q = sqrt ( epsilon ) * ( rx .* ( Dr * u ));
+%   q(vmapM(3:2:end)) = q(vmapM(3:2:end)) - q(vmapM(2:2:end-1));
 %
 %  Compute jumps DQ at each element face.
 %
   dq = zeros(Nfaces,K); 
-  dq(:) = ( q(vmapM) - q(vmapP) ) / 2.0;
+  %dq(:) = ( q(vmapM) - q(vmapP) ) / 2.0;
 %
 %  Impose boundary conditions on the jumps.
 %  Here, Dirichlet conditions are used.
@@ -68,7 +70,7 @@ function [ rhsu ] = BurgersRHS1D ( u, epsilon, xL, xR, time )
 %  Evaluate DU2, nonlinear flux at faces of the K elements.
 %
   du2 = zeros(Nfp*Nfaces,K); 
-  du2(:) = ( u(vmapM).^2 - u(vmapP).^2 ) / 2.0;
+  %du2(:) = ( u(vmapM).^2 - u(vmapP).^2 ) / 2.0;
 % 
 %  Impose boundary conditions on the fluxes.
 %
@@ -87,17 +89,20 @@ function [ rhsu ] = BurgersRHS1D ( u, epsilon, xL, xR, time )
 %
 %  Flux term
 %
-  flux = nx .* ( du2 / 2.0 - sqrt ( epsilon ) * dq ) ...
-    - maxvel / 2.0 .* du - sqrt ( epsilon ) * tau .* du;
+  %flux = nx .* ( du2 / 2.0 - sqrt ( epsilon ) * dq ) ...
+  %  - maxvel / 2.0 .* du - sqrt ( epsilon ) * tau .* du;
 %
 %  DFDD, local derivatives of field
 %
-  dfdr = Dr * ( u .^ 2 / 2 - sqrt ( epsilon ) * q ); 
+  dfdr = Dr * ( u .^ 2 / 2);
+  dfdr(vmapM(3:2:end)) = dfdr(vmapM(3:2:end)) - dfdr(vmapM(2:2:end-1));
+  dfdr = dfdr - sqrt ( epsilon ) * q;
 %
 %  Compute right hand sides of the semi-discrete PDE
 %
-  rhsu = - ( rx .* dfdr - LIFT * ( Fscale .* flux ) );
-
+  %rhsu = - ( rx .* dfdr - LIFT * ( Fscale .* flux ) );
+  rhsu = - ( rx .* dfdr);
+  
   return
 end
 

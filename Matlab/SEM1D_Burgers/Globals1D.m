@@ -41,6 +41,16 @@
 %
 global Dr
 %
+%  Mass and Advection matrices.
+%
+global M
+global A
+%
+%  Global Mass and Advection matrices.
+%
+global MG
+global AG
+%
 %  EToE(1:K,1:Nfaces) is the element-to-element connectivity array.
 %
 global EToE 
@@ -110,6 +120,10 @@ global NODETOL
 %
 global Np
 %
+%  Ns is the number of global nodes.
+%
+global Ns
+%
 %  nx(1:2,K) is the surface normals.  
 %  For this 1D problem, they are -1 and +1 for each element.
 %
@@ -118,6 +132,11 @@ global nx
 %  r(1:N+1) contains the Gauss-Lobatto quadrature points for [-1,+1] of order N.
 %
 global r
+%
+%  vector with gauss quadrature weights.
+%
+global w
+global W    %matrix
 %
 %  rk4a(1:5): Runge-Kutta coefficients:
 %
@@ -156,6 +175,12 @@ global VX
 %  indexed by local node index and element.
 %
 global x
+global xv
+%
+%  solution U.
+%
+global u
+global uv
 %
 rk4a = [            0.0 ...
         -567301805773.0/1357537059087.0 ...
