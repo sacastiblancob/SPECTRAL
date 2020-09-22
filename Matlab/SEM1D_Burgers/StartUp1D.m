@@ -44,16 +44,47 @@ NODETOL = 1e-10;
 Np = N + 1; 
 Nfp = 1; 
 Nfaces = 2;
+
 %
-%  Compute basic Legendre-Gauss-Lobatto grid
+%  Dealiasing stuff
+%
+if (deal==1 || iint==1)
+    Nd = ceil((3/2)*(N+1))-1;
+    Npd = Nd+1;
+    rd = JacobiGL(0,0,Nd);
+    wd = gllw(Nd);
+    Wd = spdiags(wd',0,Nd+1,Nd+1);
+    Cd = ones(Nd+1,1);
+    Cd(Nd+1) = Nd/(2*Nd + 1);
+    Cd = spdiags(Cd,0,Nd+1,Nd+1);
+end
+
+%
+%  Compute basic Legendre-Gauss-Lobatto grid and metrics
 %
 r = JacobiGL ( 0, 0, N );
+w = gllw(N);
+W = spdiags(w',0,N+1,N+1);
+C = ones(N+1,1);
+C(N+1) = N/(2*N + 1);
+C = spdiags(C,0,N+1,N+1);
+
 %
 %  Build reference element matrices
 %
-V  = Vandermonde1D ( N, r ); 
-invV = inv ( V );
+%V  = Vandermonde1D ( N, r ); 
+V = Vandermonde1D (0,0,N,r);
+%invV = inv ( V );
+invV = C*V'*W;
 Dr = Dmatrix1D ( N, r, V );
+
+%For dealiasing
+if (deal==1 || iint==1)
+    Vd = Vandermonde1D(0,0,Nd,rd);
+    invVd = Cd*Vd'*Wd;
+    Drd = Dmatrix1D(Nd,rd,Vd);
+end
+
 %
 %  Create surface integral terms
 %
@@ -65,93 +96,41 @@ Dr = Dmatrix1D ( N, r, V );
 va = EToV(:,1)'; 
 vb = EToV(:,2)';
 x = ones(N+1,1) * VX(va) + 0.5 * (r+1) * (VX(vb)-VX(va));
+
+%dealiasing or more nodes version
+if (deal==1 || iint==1)
+    xd = ones(Nd+1,1) * VX(va) + 0.5 * (rd+1) * (VX(vb)-VX(va));
+end
+
 %
 %  Calculate geometric factors
 %
 [rx,J] = GeometricFactors1D ( x, Dr );
 
-%
-%  Create mass matrix
-%
-w = gllw(N)';
-W = diag(w);
-M = W;
-% M=zeros(Np,Np);
-% for i=1:Np
-%   %M(i,i)=wg(i)*dx1/2.0;
-%   M(i,i) = w(i);
-% end
-
-%
-%  Create Advection matrix
-%
-A = Dr.*w;
-% A=zeros(Np,Np);
-% for i=1:Np
-%   for j=1:Np
-%     A(i,j)=Dr(i,j)*w(i);
-%   end
-% end
-
-%
-%  Create Stiffness matrix
-%
-%S=zeros(Np,Np);
-%S = Dr'*(A);
-%S = Dr'*Dr;
-S = Dr'*W*Dr;
-
-%
-%  Global Assembly
-%
-Ns=((K-1)*(Np-1))+Np;
-AG=zeros(Ns,Ns);
-MG=zeros(Ns,Ns);
-SG=zeros(Ns,Ns);
-ap=0;
-for k=1:K
-  for i=1:Np
-    for j=1:Np
-      SG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = SG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + S(i,j)*J(i,k);
-        
-      AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = AG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + A(i,j)*J(i,k);
-
-      MG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) = MG(Np*(k-1)+i-ap,Np*(k-1)+j-ap) + M(i,j)*J(i,k);
-    end
-  end
-  ap=ap+1;
+%dealiasing version
+if (deal==1 || iint==1)
+    [rxd,Jd] = GeometricFactors1D ( xd, Drd );
 end
-
-%
-%  Inversion of matrix MG
-%
-for i=1:Ns
-    MG(i,i) = 1/MG(i,i);
-end
-
-%
-%  For solve in time
-%
-AG = MG*AG;
-SG = MG*SG;
-AG(1,:) = 0.0;
-AG(Ns,:) = 0.0;
-AG(1,1) = 1;
-AG(Ns,Ns) = 1;
-SG(1,:) = 0.0;
-SG(Ns,:) = 0.0;
-SG(1,1) = 1;
-SG(Ns,Ns) = 1;
 
 %
 %  reordering x
 %
-xv = zeros(Ns,1);
-xv(1) = xL;
-xv(Ns) = xR;
-for k = 1:K
-    xv((Np-1)*(k-1)+2:(Np-1)*(k)+1) = x(2:Np,k);
+xv = mat2vec(x);
+Ns=((K-1)*(Np-1))+Np;
+
+%dealiasing version
+if (deal==1 || iint==1)
+    xvd = mat2vec(xd);
+    Nsd = ((K-1)*(Npd-1)) + Npd;
 end
+
+
+% xv = zeros(Ns,1);
+% xv(1) = xL;
+% xv(Ns) = xR;
+% for k = 1:K
+%     xv((Np-1)*(k-1)+2:(Np-1)*(k)+1) = x(2:Np,k);
+% end
 
 % %
 % %  Compute masks for edge nodes
@@ -173,4 +152,10 @@ end
 % %  Build connectivity maps
 % %
 % [ vmapM, vmapP, vmapB, mapB ] = BuildMaps1D ( );
+%
+% Vector and matrix with Gauss-Quadrature weights
+%
+%w = gllw(N)';
+%W = diag(w);
+
 

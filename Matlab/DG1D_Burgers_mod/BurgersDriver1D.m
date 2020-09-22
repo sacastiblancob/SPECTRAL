@@ -15,16 +15,20 @@ Globals1D;
 % Order of polymomials used for approximation
 N = 12;
 
+%Final time
+FinalTime = 1.2;
+
 %dealiasing??
 deal = 0.0;     %1.0 for dealiasing, 0.0 for non-dealiasing
 
 %improved integration??
 iint = 1.0;     %1.0 for immproved integration, 0.0 for not
+%hay un error con iint=1.0, dan mal los flujos viscosos
 
 %init Filter matrix
 %filter = ?
-filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
-t = 2;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
+filter = 0.0;   %1.0 for filtering, 0.0 for non-filtering
+t = 0;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
 Nc=3;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
 if t==2
     s=34;           % exponential filter degree
@@ -34,7 +38,7 @@ end
 %viscosity constant
 %epsilon = 0.05;      %original
 %epsilon = 0.001;      %viscosity constant
-epsilon = 0.001;
+epsilon = 0.0;
 
 % Generate simple mesh
 xL = -1;
@@ -47,9 +51,10 @@ Elements = 12;
 % Initialize solver and construct grid and metric
 StartUp1D;
 
+% Filter matrix F
 if filter==1.0
     %last parameter (t) means type,
-    F = Filter1D(N,Nc,s,t);
+    [F,L] = Filter1D(N,Nc,s,t,V,W,r);
 end
 
 % Set initial conditions
@@ -65,55 +70,36 @@ uBott = min(min(u)) - 0.1;
 uUp = max(max(u)) + 0.1;
 
 % Solve Problem
-FinalTime = 1.2;
 %[u] = Burgers1D ( u, epsilon, xL, xR, FinalTime );
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Burgers1D subroutine
+%Original Burgers1D subroutine - Hetshaven
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %init time
-time = 0.0;
+  time = 0.0;
 %
 %  Runge-Kutta residual storage  
 %
-resu = zeros(Np,K);
-rese = zeros(1,K);      %result vector for energy disipation due to viscosity
-resedf = zeros(1,K);    %result vector for energy disipation flux over bound.
-resenf = zeros(1,K);    %result vector for energy flux due to non-linear term
+  resu = zeros(Np,K);
+  rese = zeros(1,K);      %result vector for energy disipation due to viscosity
+  resedf = zeros(1,K);    %result vector for energy disipation flux over bound.
+  resenf = zeros(1,K);    %result vector for energy flux due to non-linear term
 %
 %  Compute time step size
 %
-xmin = min(abs(x(1,:)-x(2,:)));
-CFL = 0.25;
-umax = max(max(abs(u)));
-%dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
-dt = 0.1*CFL*(xmin/umax);
-%dt = CFL*(xmin/umax);
-%dt = 3.1776e-04;
-Nsteps = ceil(FinalTime/dt);
-dt = FinalTime/Nsteps; 
+  xmin = min(abs(x(1,:)-x(2,:)));
+  CFL = 0.25;
+  umax = max(max(abs(u)));
+  %dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
+  dt = 0.1*CFL*(xmin/umax);
+  %dt = CFL*(xmin/umax);
+  %dt = 3.1776e-04;
+  Nsteps = ceil(FinalTime/dt);
+  dt = FinalTime/Nsteps; 
 
 %
 %  Initial Energy
 %
-
-%Initialization
-E = zeros(Nsteps+1,1);      %Energy of whole domain
-Ev = zeros(Nsteps+1,1);     %Energy dissipated by viscosity in whole domain
-Evf = zeros(Nsteps+1,1);    %Fluxes of energy due to viscosity in whole domain
-Enlf = zeros(Nsteps+1,1);   %Non-linear fluxes of energy in whole domain
-dEEt = zeros(Nsteps+1,K);   %energy dissipation by element due to viscosity
-dfEEt = zeros(Nsteps+1,K);  %energy flux due to dissipation
-nfEEt = zeros(Nsteps+1,K);  %energy flux due to non-linear term
-EEt = zeros(Nsteps+1,K);    %energy by element
-%Econ = zeros(Nsteps+1,K);   %conservation?
-T = zeros(Nsteps+1,1);
-
-%Initial Energy
-Eto = u.^2;
-EEt(1,:) = w*(Eto.*J);
-E(1) = sum(EEt(1,:));
-T(1) = 0.0;
-
+  Init_energy
 
 %
 %  Outer time step loop 
@@ -211,112 +197,38 @@ for tstep=1:Nsteps
         %
           rhsu = - ( rx .* dfdr - LIFT * ( Fscale .* flux ) );
         
+        %solving velocity  
+          resu = rk4a(INTRK)*resu + dt*rhsu;
+          u = u+rk4b(INTRK)*resu;
+        
         % end BurgersRHS1D subroutine
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % energy calculations
-        
-        %disipation over boundaries
-        %Fscale = 1/jacobiano en las fronteras de los elementos
-        
-        if iint==0
-            deru = Dr*u./J;        %without more nodes
-        else
-            umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
-            ud = Vd*umd;                                              %going to nodal with more nodes
-            deru = Drd*ud./Jd;
-        end
-        
-        dflux = 2*epsilon.*u([1 N+1],:).*deru([1 N+1],:);
-        dflux = (dflux(2,:) - dflux(1,:));
-        
-        %non-linear flux over boundaries
-        nflux = 2*(u([1 N+1],:).^3)./3;
-        nflux = -(nflux(2,:) - nflux(1,:));
-        
-        %dissipation term
-        if iint==0
-            edis = -(2*epsilon*w*(((deru).^2).*J));
-        else
-            edis = -(2*epsilon*wd*(((deru).^2).*Jd));
-        end
-            
-      %solving energy
-      %RHSE of energy equation integrated over a domain
-      %rhse = edis; %dflux + nflux + edis;
-      
-      %dissipation due to viscous term
-      rese = rk4a(INTRK)*rese + dt*edis;
-      EE = EE + rk4b(INTRK)*rese;
-      
-      %viscous fluxes term
-      resedf = rk4a(INTRK)*resedf + dt*dflux;
-      EEdf = EEdf + rk4b(INTRK)*resedf;
-      
-      %non-linear fluxes term
-      resenf = rk4a(INTRK)*resenf + dt*nflux;
-      EEnf = EEnf + rk4b(INTRK)*resenf;      
-            
-      %end energy calculations
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-      %solving velocity  
-      resu = rk4a(INTRK)*resu + dt*rhsu;
-      u = u+rk4b(INTRK)*resu;
+          Calc_energy             
+        %end energy calculations
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end
     
 %     %computing analytical solution
 %     ua = analitica(x,time+dt,epsilon);
-        
-    % computing energy before filtering
-    if iint == 0
-        Et = u.^2;
-        
-        EEt(tstep+1,:) = w*(Et.*J);    %computing integral with default nodes
-    else
-        umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
-        ud = Vd*umd;    %to nodal with more modes
-        Et = ud.^2;     %squaring
-        
-        EEt(tstep+1,:) = wd*(Et.*Jd);   %computing integral with more nodes
-    end
-        
-    E(tstep+1) = sum(EEt(tstep+1,:));
-    
-%     %Computing dissipate energy due to viscosity
-%     %duv = (1./J).*Dr*u;
-%     dus = (Dr*u./J).^2;
-%     %function of N, Elements, CFL, xL and xR
-%     %Evele = 2*0.008059650327027*epsilon*w*(dus.*J);
-%     Evele = dt*epsilon*w*(dus.*J);
-%     %Evele = epsilon*w*(dus.*J);
-    dEEt(tstep+1,:) = -EE;
-    dfEEt(tstep+1,:) = -EEdf;
-    nfEEt(tstep+1,:) = -EEnf;
-    Ev(tstep+1) = -1.0*(sum(EE));
-    Evf(tstep+1) = -1.0*(sum(EEdf));
-    Enlf(tstep+1) = -1.0*(sum(EEnf));
-    
-%    Evtot = sum(EE);
-%    Ev(tstep+1) = Ev(tstep) + Evtot;
-        
-    %Storing times
-    T(tstep+1) = time;
-    
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % energy storage        
+    Store_energy
+  
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % Filtering    
     if filter == 1.0
-        if t == 0
-            u = F*u;            %Filtering, originally not implemented by default
-        elseif t==1
-            %u = spdiags(1./sqrt(w'),0,N+1,N+1)*F*(sqrt(W))*u;
-            u = F*u;
-        elseif t==2
-            u = F*u;
-        end
+        u = filtering(u,F);
     end
-    time
+    
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % Advancing time  
     time = time + dt;
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % Plotting
     %
     %  Display solution on every 10th time step.
     %

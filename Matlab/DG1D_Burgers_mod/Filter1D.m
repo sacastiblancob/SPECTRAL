@@ -1,4 +1,4 @@
-function [F] = Filter1D(N,Nc,s,t)
+function [F,filterdiag] = Filter1D(N,Nc,s,t,V,W,r)
 % function [F] = Filter1D(N,Nc,s)
 % Purpose : Initialize 1D filter matrix of size N.
 % Order of exponential filter is (even) s with cutoff at Nc;
@@ -7,9 +7,7 @@ function [F] = Filter1D(N,Nc,s,t)
 % s = Filter order
 % t = type of filter, =0 Non-Unitary (Classical), =1 Unitary (Sumedh)
     
-    Globals1D;
-    
-    filterdiag = ones(N+1,1);
+   filterdiag = ones(N+1,1);
     alp = -log(eps);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -40,17 +40,21 @@
 %  where V is the Vandermonde matrix, and VR is the gradient of V.
 %
 global Dr
+global Drd
 %
 %  Mass and Advection matrices.
 %
 global M
+global Md
 global A
+global Ad
 global S
 %
 %  Global Mass and Advection matrices.
 %
 global MG
 global AG
+global AGd
 global SG
 %
 %  EToE(1:K,1:Nfaces) is the element-to-element connectivity array.
@@ -77,10 +81,12 @@ global Fx
 %  invV(1:N+1,1:N+1) is the inverse of V, the Vandermonde matrix.
 %
 global invV
+global invVd
 %
 %  J(?,?) is the metric element for the local mapping of the 1D elements.
 %
 global J
+global Jd
 %
 %  K is the number of elements.
 %
@@ -105,6 +111,7 @@ global mapO
 %  N is the order of the polynomials used for approximation.
 %
 global N
+global Nd
 %
 %  Nfaces is 2, the number of "faces" each element has.
 %
@@ -121,10 +128,12 @@ global NODETOL
 %  Np is N+1, the actual number of coefficients in a polynomial of degree N.
 %
 global Np
+global Npd
 %
 %  Ns is the number of global nodes.
 %
 global Ns
+global Nsd
 %
 %  nx(1:2,K) is the surface normals.  
 %  For this 1D problem, they are -1 and +1 for each element.
@@ -134,11 +143,14 @@ global nx
 %  r(1:N+1) contains the Gauss-Lobatto quadrature points for [-1,+1] of order N.
 %
 global r
+global rd
 %
 %  vector with gauss quadrature weights.
 %
 global w
+global wd
 global W    %matrix
+global Wd
 %
 %  rk4a(1:5): Runge-Kutta coefficients:
 %
@@ -155,10 +167,12 @@ global rk4c
 %  rx(?,?) is the inverse of J.
 %
 global rx
+global rxd
 %
 %  V(1:N+1,1:N+1) is the Vandermonde matrix.
 %
 global V
+global Vd
 global vmapB
 global vmapI
 %
@@ -178,11 +192,22 @@ global VX
 %
 global x
 global xv
+global xd
+global xvd
 %
 %  solution U.
 %
-global u
-global uv
+%global u
+%global uv
+%
+%  time step.
+%
+global dt
+%
+%  viscosity.
+%
+global nu
+
 %
 rk4a = [            0.0 ...
         -567301805773.0/1357537059087.0 ...
@@ -200,5 +225,6 @@ rk4c = [             0.0  ...
          1432997174477.0/9575080441755.0 ...
          2526269341429.0/6820363962896.0 ...
          2006345519317.0/3224310063776.0 ...
-         2802321613138.0/2924317926251.0];
+         2802321613138.0/2924317926251.0 ...
+         1.0];
 

@@ -45,7 +45,9 @@ Np = N + 1;
 Nfp = 1; 
 Nfaces = 2;
 
-%  Dealiasing roots and points
+%
+%  Dealiasing stuff
+%
 if (deal==1 || iint==1)
     Nd = ceil((3/2)*(N+1))-1;
     rd = JacobiGL(0,0,Nd);
@@ -57,7 +59,7 @@ if (deal==1 || iint==1)
 end
 
 %
-%  Compute basic Legendre-Gauss-Lobatto grid
+%  Compute basic Legendre-Gauss-Lobatto grid and metrics
 %
 r = JacobiGL ( 0, 0, N );
 w = gllw(N);
@@ -81,6 +83,7 @@ if (deal==1 || iint==1)
     invVd = Cd*Vd'*Wd;
     Drd = Dmatrix1D(Nd,rd,Vd);
 end
+
 %
 %  Create surface integral terms
 %
@@ -109,6 +112,7 @@ end
 if iint==1
     [rxd,Jd] = GeometricFactors1D ( xd, Drd );
 end
+
 %
 %  Compute masks for edge nodes
 %
