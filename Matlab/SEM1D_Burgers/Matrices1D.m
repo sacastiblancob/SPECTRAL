@@ -97,10 +97,10 @@ for i=1:Ns
 end
 
 if deal==1
-    IMGd = MGd;
-    for i=1:Ns
-        IMGd(i,i) = 1/MGd(i,i);
-    end
+     IMGd = sparse(Nsd,Nsd);
+     for i=1:Nsd
+         IMGd(i,i) = 1/MGd(i,i);
+     end
 end
 %
 %  For solve in time

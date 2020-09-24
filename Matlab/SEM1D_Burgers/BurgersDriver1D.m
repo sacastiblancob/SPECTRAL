@@ -37,7 +37,7 @@ end
 
 %viscosity constant
 %epsilon = 0.01;
-nu = 0.0005;
+nu = 0.0;
 epsilon = nu;
 
 % Generate simple mesh
@@ -127,10 +127,10 @@ for tstep=1:Nsteps
       %uv(1) = exp(-(xv(1)-vel*timelocal).^2/sqrt(0.01));
       
       %Advection
-        uv(1) = 0;
-        u(1) = uv(1);
-        uv(Ns) = 0;
-        u(end) = uv(Ns);
+%         uv(1) = 0;
+%         u(1) = uv(1);
+%         uv(Ns) = 0;
+%         u(end) = uv(Ns);
       %uv(Ns) = exp(-(xv(Ns)-vel*timelocal).^2/sqrt(0.01));
       %rhsu = -1.0*AG*(0.5*uv.^2);
 
@@ -140,16 +140,16 @@ for tstep=1:Nsteps
           umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
           ud = Vd*umd;                                              %going to nodal with more nodes
           udv = mat2vec(ud);
-          %dfdrd = -0.5*AGd*(udv .^ 2);                                        %computing non-linear term with more nodes
-          %dfdrd = vec2matrix(dfdrd,K);
-          dfdrd = ud .^ 2;
+          dfdrd = -0.5*AGd*(udv .^ 2);                                        %computing non-linear term with more nodes
+          dfdrd = vec2matrix(dfdrd,K);
+          %dfdrd = ud .^ 2;
           umd = invVd*dfdrd;                                        %putting the non-linear result in modal
           umd = umd(1:N+1,:);                                       %extracting the padding part
           ud = V*umd;                                               %going back to original nodal
-          uv = mat2vec(ud);
+          uv2 = mat2vec(ud);
 
-          rhsu = -0.5*AG*(uv.^2);                                   %computing the discretized term
-          %rhsu = uv;
+          %rhsu = -0.5*AG*(uv2);                                   %computing the discretized term
+          rhsu = uv2;
       else
           rhsu = -0.5*AG*(uv.^2);
       end
@@ -277,26 +277,26 @@ end
 
 Econ = EEt + dEEt + dfEEt + nfEEt;
 
-hold on
-plot(T,E)
-hold on
-plot(T,Ev)
-hold on
-plot(T,Evf)
-hold on
-plot(T,Enlf)
-hold on
-Ebal = E+Ev+Evf+Enlf;
-plot(T,Ebal)
-legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
-%legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
-title('Energy vs Time, \nu=0.0, \Omega = whole domain')
-%ylim([-E(1)/10 E(1)+E(1)/5])
-ylim([-0.1 1.6])
-xlim([T(1) T(tstep+1)])
-%xlim([T(1) 0.8])
-ylabel('Energy')
-xlabel('Time')
+% hold on
+% plot(T,E)
+% hold on
+% plot(T,Ev)
+% hold on
+% plot(T,Evf)
+% hold on
+% plot(T,Enlf)
+% hold on
+% Ebal = E+Ev+Evf+Enlf;
+% plot(T,Ebal)
+% legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
+% %legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
+% title('Energy vs Time, \nu=0.0, \Omega = whole domain')
+% %ylim([-E(1)/10 E(1)+E(1)/5])
+% ylim([-0.1 1.6])
+% xlim([T(1) T(tstep+1)])
+% %xlim([T(1) 0.8])
+% ylabel('Energy')
+% xlabel('Time')
 % 
 % a=5;
 % liminf = min([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])-EEt(1,a)/10;
