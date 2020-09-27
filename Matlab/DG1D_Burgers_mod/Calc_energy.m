@@ -12,6 +12,10 @@ else
     deru = Drd*ud./Jd;
 end
 
+%u and its derivative in modal
+derum = invV*deru;      %derivative of u in modal
+um = invV*u;            %u in modal
+
 %For viscous fluxes over boundaries
 if iint==0
     dflux = 2*epsilon.*u([1 N+1],:).*deru([1 N+1],:);
@@ -21,6 +25,13 @@ else
     dflux = (dflux(2,:) - dflux(1,:));
 end
 
+dfluxm = zeros(N+1,K);
+for i=1:K
+    %dfm = 2*epsilon.*(um(:,i).*V([1 N+1],:)').*(derum(:,i).*V([1 N+1],:)');
+    dfm = 2*epsilon.*(um(:,i).*derum(:,i)).*V([1 N+1],:)';
+    dfluxm(:,i) = (dfm(:,2) - dfm(:,1));
+end
+
 %For non-linear flux over boundaries
 nflux = 2*(u([1 N+1],:).^3)./3;
 nflux = -(nflux(2,:) - nflux(1,:));
@@ -28,8 +39,10 @@ nflux = -(nflux(2,:) - nflux(1,:));
 %For dissipation term
 if iint==0
     edis = -(2*epsilon*w*(((deru).^2).*J));
+    edism = 2*epsilon*(invV*deru).^2.*J(1,:);
 else
     edis = -(2*epsilon*wd*(((deru).^2).*Jd));
+    edism = 2*epsilon*(invVd*deru).^2.*Jd(1,:);
 end
 
 %solving energy

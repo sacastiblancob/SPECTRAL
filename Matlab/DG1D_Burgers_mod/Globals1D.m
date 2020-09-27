@@ -175,6 +175,10 @@ global VX
 global x
 global xd
 %
+%correction matrix for numerical integration
+%
+global C
+%
 rk4a = [            0.0 ...
         -567301805773.0/1357537059087.0 ...
         -2404267990393.0/2016746695238.0 ...

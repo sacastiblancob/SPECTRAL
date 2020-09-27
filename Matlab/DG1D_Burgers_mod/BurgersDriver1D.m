@@ -22,12 +22,12 @@ FinalTime = 1.2;
 deal = 0.0;     %1.0 for dealiasing, 0.0 for non-dealiasing
 
 %improved integration??
-iint = 1.0;     %1.0 for immproved integration, 0.0 for not
+iint = 0.0;     %1.0 for immproved integration, 0.0 for not
 %hay un error con iint=1.0, dan mal los flujos viscosos
 
 %init Filter matrix
 %filter = ?
-filter = 0.0;   %1.0 for filtering, 0.0 for non-filtering
+filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
 t = 0;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
 Nc=3;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
 if t==2
@@ -38,12 +38,12 @@ end
 %viscosity constant
 %epsilon = 0.05;      %original
 %epsilon = 0.001;      %viscosity constant
-epsilon = 0.0;
+epsilon = 0.01;
 
 % Generate simple mesh
 xL = -1;
 xR = 1;
-Elements = 12;
+Elements = 4;
 [Nv, VX, K, EToV] = MeshGen1D(xL,xR,Elements);
 %END CONTROL PANEL
 %%
@@ -92,7 +92,7 @@ uUp = max(max(u)) + 0.1;
   %dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
   dt = 0.1*CFL*(xmin/umax);
   %dt = CFL*(xmin/umax);
-  %dt = 3.1776e-04;
+  dt = 0.0005;
   Nsteps = ceil(FinalTime/dt);
   dt = FinalTime/Nsteps; 
 
@@ -100,7 +100,8 @@ uUp = max(max(u)) + 0.1;
 %  Initial Energy
 %
   Init_energy
-
+  modes = (0:N)';
+  
 %
 %  Outer time step loop 
 %
@@ -220,7 +221,8 @@ for tstep=1:Nsteps
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Filtering    
     if filter == 1.0
-        u = filtering(u,F);
+        %u = filtering(u,F);
+        u = F*u;
     end
     
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -232,56 +234,69 @@ for tstep=1:Nsteps
     %
     %  Display solution on every 10th time step.
     %
-%     if ( rem ( tstep, 10 ) == 0 )
-% %       %ploting analytical
-% %       plot(x,ua,'k')
-% %       hold on
-%       
-%       for i = 1 : Elements
-%         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
-%           'Markersize', 1, 'LineWidth', 2 );
-%         hold all
-%       end
-%       grid ( 'on' );
-%       axis ( [ xL, xR, uBott, uUp ] );
-%       
-%       drawnow;
-%       hold off
-%     end
+    if ( rem ( tstep, 10 ) == 0 )
+
+      % Plotting analytical and numerical solutions  
+      subplot(1,2,1)
+%       %ploting analytical
+%       plot(x,ua,'k')
+%       hold on
+      for i = 1 : Elements
+        plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+          'Markersize', 1, 'LineWidth', 2 );
+        hold all
+      end
+      grid ( 'on' );
+      axis ( [ xL, xR, uBott, uUp ] );
+      
+      drawnow;
+      hold off
+      
+      % Plotting energy by frequency
+      subplot(1,2,2)
+      plot(modes,Etom);
+      xlim([-0.1 N+0.1]);
+      ylim([0 0.2]);
+      legend('1','2','3','4','5','6','7','8','9','10','11','12')
+      drawnow
+      
+    end
     %pause(0.05)
     
-%     %ploting
-%     xv = reshape(x,1,[]);
-%     uv = reshape(u,1,[]);
-%     plot(xv,uv);
+    %ploting
+% %     xv = reshape(x,1,[]);
+% %     uv = reshape(u,1,[]);
+%     subplot(1,2,1)
+%     plot(x,u);
 %     xlim([xL xR]);
 %     ylim([uBott uUp]);
 %     drawnow
+
 
 end
 
 Econ = EEt + dEEt + dfEEt + nfEEt;
 
-hold on
-plot(T,E)
-hold on
-plot(T,Ev)
-hold on
-plot(T,Evf)
-hold on
-plot(T,Enlf)
-hold on
-Ebal = E+Ev+Evf+Enlf;
-plot(T,Ebal)
-legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
-%legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
-title('Energy vs Time, \nu=0.0, \Omega = whole domain')
-%ylim([-E(1)/10 E(1)+E(1)/5])
-ylim([-0.1 1.6])
-xlim([T(1) T(tstep+1)])
-%xlim([T(1) 0.8])
-ylabel('Energy')
-xlabel('Time')
+% hold on
+% plot(T,E)
+% hold on
+% plot(T,Ev)
+% hold on
+% plot(T,Evf)
+% hold on
+% plot(T,Enlf)
+% hold on
+% Ebal = E+Ev+Evf+Enlf;
+% plot(T,Ebal)
+% legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
+% %legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
+% title('Energy vs Time, \nu=0.0, \Omega = whole domain')
+% %ylim([-E(1)/10 E(1)+E(1)/5])
+% ylim([-0.1 1.6])
+% xlim([T(1) T(tstep+1)])
+% %xlim([T(1) 0.8])
+% ylabel('Energy')
+% xlabel('Time')
 % 
 % a=5;
 % liminf = min([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])-EEt(1,a)/10;

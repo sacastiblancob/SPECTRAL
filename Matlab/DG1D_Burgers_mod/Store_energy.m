@@ -39,3 +39,8 @@ Enlf(tstep+1) = -1.0*(sum(EEnf));
 
 %Storing times
 T(tstep+1) = time;
+
+%Energy per mode
+Etom =(invV*u).^2.*J(1,:);
+
+

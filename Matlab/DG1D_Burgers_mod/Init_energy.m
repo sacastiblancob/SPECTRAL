@@ -21,3 +21,12 @@ Eto = u.^2;
 EEt(1,:) = w*(Eto.*J);
 E(1) = sum(EEt(1,:));
 T(1) = 0.0;
+
+%Energía por modo
+Etom =(invV*u).^2.*J(1,:);
+
+
+
+
+
+

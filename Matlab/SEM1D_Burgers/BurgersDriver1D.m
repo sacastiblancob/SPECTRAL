@@ -18,7 +18,7 @@ N = 12;
 FinalTime = 1.2;
 
 %dealiasing??
-deal = 1.0;     %1.0 for dealiasing, 0.0 for non-dealiasing
+deal = 0.0;     %1.0 for dealiasing, 0.0 for non-dealiasing
 
 %improved integration??
 iint = 0.0;     %1.0 for immproved integration, 0.0 for not
@@ -140,7 +140,8 @@ for tstep=1:Nsteps
           umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
           ud = Vd*umd;                                              %going to nodal with more nodes
           udv = mat2vec(ud);
-          dfdrd = -0.5*AGd*(udv .^ 2);                                        %computing non-linear term with more nodes
+          %dfdrd = -0.5*AGd*(udv .^ 2);                                        %computing non-linear term with more nodes
+          dfdrd = -udv.*(AGd*udv);
           dfdrd = vec2matrix(dfdrd,K);
           %dfdrd = ud .^ 2;
           umd = invVd*dfdrd;                                        %putting the non-linear result in modal

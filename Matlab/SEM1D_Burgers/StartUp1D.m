@@ -49,7 +49,7 @@ Nfaces = 2;
 %  Dealiasing stuff
 %
 if (deal==1 || iint==1)
-    Nd = ceil((3/2)*(N+1))-1;
+    Nd = ceil((3/2)*(N+1))+6;
     Npd = Nd+1;
     rd = JacobiGL(0,0,Nd);
     wd = gllw(Nd);
