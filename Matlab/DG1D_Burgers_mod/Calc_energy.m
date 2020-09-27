@@ -12,9 +12,10 @@ else
     deru = Drd*ud./Jd;
 end
 
-%u and its derivative in modal
-derum = invV*deru;      %derivative of u in modal
-um = invV*u;            %u in modal
+%u times du in modal (for dissipation fluxes)
+udum = invV*(u.*deru);
+%u cube in modal (for non-linear fluxes)
+u3m = invV*(u.^3);
 
 %For viscous fluxes over boundaries
 if iint==0
@@ -27,8 +28,7 @@ end
 
 dfluxm = zeros(N+1,K);
 for i=1:K
-    %dfm = 2*epsilon.*(um(:,i).*V([1 N+1],:)').*(derum(:,i).*V([1 N+1],:)');
-    dfm = 2*epsilon.*(um(:,i).*derum(:,i)).*V([1 N+1],:)';
+    dfm = 2*epsilon.*(udum(:,i).*V([1 N+1],:)');
     dfluxm(:,i) = (dfm(:,2) - dfm(:,1));
 end
 
@@ -36,13 +36,19 @@ end
 nflux = 2*(u([1 N+1],:).^3)./3;
 nflux = -(nflux(2,:) - nflux(1,:));
 
+nfluxm = zeros(N+1,K);
+for i=1:K
+    nfm = (2/3)*(u3m(:,i).*V([1 N+1],:)');
+    nfluxm(:,i) = -(nfm(:,2) - nfm(:,1));
+end
+
 %For dissipation term
 if iint==0
     edis = -(2*epsilon*w*(((deru).^2).*J));
-    edism = 2*epsilon*(invV*deru).^2.*J(1,:);
+    edism = -2*epsilon*(invV*deru).^2.*J(1,:);
 else
     edis = -(2*epsilon*wd*(((deru).^2).*Jd));
-    edism = 2*epsilon*(invVd*deru).^2.*Jd(1,:);
+    edism = -2*epsilon*(invVd*deru).^2.*Jd(1,:);
 end
 
 %solving energy
@@ -53,10 +59,22 @@ end
 rese = rk4a(INTRK)*rese + dt*edis;
 EE = EE + rk4b(INTRK)*rese;
 
+resem = rk4a(INTRK)*resem + dt*edism;
+EEm = EEm + rk4b(INTRK)*resem;
+
 %viscous fluxes term
 resedf = rk4a(INTRK)*resedf + dt*dflux;
 EEdf = EEdf + rk4b(INTRK)*resedf;
 
+resedfm = rk4a(INTRK)*resedfm + dt*dfluxm;
+EEdfm = EEdfm + rk4b(INTRK)*resedfm;
+
 %non-linear fluxes term
 resenf = rk4a(INTRK)*resenf + dt*nflux;
-EEnf = EEnf + rk4b(INTRK)*resenf;  
+EEnf = EEnf + rk4b(INTRK)*resenf;
+
+resenfm = rk4a(INTRK)*resenfm + dt*nfluxm;
+EEnfm = EEnfm + rk4b(INTRK)*resenfm;
+
+
+

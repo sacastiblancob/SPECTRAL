@@ -16,16 +16,27 @@ EEt = zeros(Nsteps+1,K);    %energy by element
 %Econ = zeros(Nsteps+1,K);   %conservation?
 T = zeros(Nsteps+1,1);
 
+%3 dimensional tensors for store modal energy
+EEtm = zeros(N+1,K,Nsteps+1);   %energy by element and by mode
+dEEtm = zeros(N+1,K,Nsteps+1);  %energy dissipation by element due to viscosity (by mode)
+dfEEtm = zeros(N+1,K,Nsteps+1);  %energy fluxes due to dissipation term (by mode)
+nfEEtm = zeros(N+1,K,Nsteps+1);  %energy fluxes due to non-linear term (by mode)
+
 %Initial Energy
 Eto = u.^2;
 EEt(1,:) = w*(Eto.*J);
 E(1) = sum(EEt(1,:));
 T(1) = 0.0;
 
-%Energía por modo
+%Energía inicial por modo
 Etom =(invV*u).^2.*J(1,:);
+EEtm(:,:,1) = Etom;
 
-
+% %commented, only for posprocessing purposes
+% EM = zeros(Nsteps+1,K);
+% for i=1:Nsteps+1
+%   EM(i,:) = sum(nfEEtm(:,:,i));
+% end
 
 
 

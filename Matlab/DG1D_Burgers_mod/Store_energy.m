@@ -28,8 +28,11 @@ E(tstep+1) = sum(EEt(tstep+1,:));
 %     Evele = dt*epsilon*w*(dus.*J);
 %     %Evele = epsilon*w*(dus.*J);
 dEEt(tstep+1,:) = -EE;
+dEEtm(:,:,tstep+1) = -EEm;
 dfEEt(tstep+1,:) = -EEdf;
+dfEEtm(:,:,tstep+1) = - EEdfm;
 nfEEt(tstep+1,:) = -EEnf;
+nfEEtm(:,:,tstep+1) = - EEnfm;
 Ev(tstep+1) = -1.0*(sum(EE));
 Evf(tstep+1) = -1.0*(sum(EEdf));
 Enlf(tstep+1) = -1.0*(sum(EEnf));
@@ -42,5 +45,12 @@ T(tstep+1) = time;
 
 %Energy per mode
 Etom =(invV*u).^2.*J(1,:);
+EEtm(:,:,tstep+1) = Etom;
+
+
+
+
+
+
 
 

@@ -27,7 +27,7 @@ iint = 0.0;     %1.0 for immproved integration, 0.0 for not
 
 %init Filter matrix
 %filter = ?
-filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
+filter = 0.0;   %1.0 for filtering, 0.0 for non-filtering
 t = 0;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
 Nc=3;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
 if t==2
@@ -43,7 +43,7 @@ epsilon = 0.01;
 % Generate simple mesh
 xL = -1;
 xR = 1;
-Elements = 4;
+Elements = 10;
 [Nv, VX, K, EToV] = MeshGen1D(xL,xR,Elements);
 %END CONTROL PANEL
 %%
@@ -61,9 +61,12 @@ end
 %u = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0;    %original Intitial C.
 %u = (x<-0.5)*2;     %step initial condition
 u = -sin(2*pi*x/(xR-xL));
-EE = zeros(1,K);
-EEdf = zeros(1,K);
-EEnf = zeros(1,K);
+EE = zeros(1,K);        %array for store RK4 steps of viscous dissipation
+EEdf = zeros(1,K);      %array for store RK4 steps of viscous fluxes
+EEnf = zeros(1,K);      %array for store RK4 steps of non-linear fluxes
+EEm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous dissipation
+EEdfm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous fluxes
+EEnfm = zeros(N+1,K);     %matrix for store RK4 steps of modal non-linear fluxes
 
 %Down and Up limits
 uBott = min(min(u)) - 0.1;
@@ -80,9 +83,12 @@ uUp = max(max(u)) + 0.1;
 %  Runge-Kutta residual storage  
 %
   resu = zeros(Np,K);
-  rese = zeros(1,K);      %result vector for energy disipation due to viscosity
-  resedf = zeros(1,K);    %result vector for energy disipation flux over bound.
+  rese = zeros(1,K);      %result vector for energy dissipation due to viscosity
+  resedf = zeros(1,K);    %result vector for energy dissipation flux over bound.
   resenf = zeros(1,K);    %result vector for energy flux due to non-linear term
+  resem = zeros(N+1,K);   %result matrix for energy modal disipation due to viscosity
+  resedfm = zeros(N+1,K);   %result matrix for energy modal disipation fluxes
+  resenfm = zeros(N+1,K);   %result matrix for energy modal non-linear fluxes
 %
 %  Compute time step size
 %
@@ -237,7 +243,7 @@ for tstep=1:Nsteps
     if ( rem ( tstep, 10 ) == 0 )
 
       % Plotting analytical and numerical solutions  
-      subplot(1,2,1)
+%      subplot(1,2,1)
 %       %ploting analytical
 %       plot(x,ua,'k')
 %       hold on
@@ -252,13 +258,13 @@ for tstep=1:Nsteps
       drawnow;
       hold off
       
-      % Plotting energy by frequency
-      subplot(1,2,2)
-      plot(modes,Etom);
-      xlim([-0.1 N+0.1]);
-      ylim([0 0.2]);
-      legend('1','2','3','4','5','6','7','8','9','10','11','12')
-      drawnow
+%       % Plotting energy by frequency
+%       subplot(1,2,2)
+%       plot(modes,Etom);
+%       xlim([-0.1 N+0.1]);
+%       ylim([0 0.2]);
+%       legend('1','2','3','4','5','6','7','8','9','10','11','12')
+%       drawnow
       
     end
     %pause(0.05)
@@ -277,46 +283,7 @@ end
 
 Econ = EEt + dEEt + dfEEt + nfEEt;
 
-% hold on
-% plot(T,E)
-% hold on
-% plot(T,Ev)
-% hold on
-% plot(T,Evf)
-% hold on
-% plot(T,Enlf)
-% hold on
-% Ebal = E+Ev+Evf+Enlf;
-% plot(T,Ebal)
-% legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
-% %legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
-% title('Energy vs Time, \nu=0.0, \Omega = whole domain')
-% %ylim([-E(1)/10 E(1)+E(1)/5])
-% ylim([-0.1 1.6])
-% xlim([T(1) T(tstep+1)])
-% %xlim([T(1) 0.8])
-% ylabel('Energy')
-% xlabel('Time')
-% 
-% a=5;
-% liminf = min([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])-EEt(1,a)/10;
-% limsup = max([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])+EEt(1,a)/1.5;
-% 
-% plot(T,EEt(:,a))
-% hold on
-% plot(T,dEEt(:,a))
-% plot(T,dfEEt(:,a))
-% plot(T,nfEEt(:,a))
-% plot(T,Econ(:,a))
-% legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
-% title('Energy vs Time, \nu=0.0, \Omega = 5th domain')
-% %ylim([liminf limsup])
-% %ylim([-0.22 0.32])
-% ylim([-0.5 0.2])
-% xlim([T(1) T(tstep+1)])
-% %xlim([T(1) 0.8])
-% ylabel('Energy')
-% xlabel('Time')
+Postprocessing
 
 %end Burgers1D subroutine
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
