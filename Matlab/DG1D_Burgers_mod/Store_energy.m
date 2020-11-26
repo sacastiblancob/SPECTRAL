@@ -44,9 +44,49 @@ Enlf(tstep+1) = -1.0*(sum(EEnf));
 T(tstep+1) = time;
 
 %Energy per mode
-Etom =(invV*u).^2.*J(1,:);
-EEtm(:,:,tstep+1) = Etom;
+Etm =(invV*u).^2.*J(1,:);
+EEtm(:,:,tstep+1) = Etm;
 
+% %
+% %Energy Based Filter
+% %
+% tol = 1;    %Tolerance in percentage of the initial energy.
+% 
+% Etol = abs(sum(Etom))*(tol/100);
+% LHS = Etm + (-EEm - EEdfm -EEnfm); %Left hand side
+% 
+% Proofd = sum(LHS) < sum(Etom) - Etol;
+% Proofu = sum(LHS) > sum(Etom) + Etol;
+% el = 1:K;
+% 
+% EEl = sum(LHS);
+% elp = el(Proofu);
+% 
+% for i = 1:length(elp)
+% %    Edif = (EEl(elp(i)) - EE(elp(i)))^0.5;
+%     Edif = (EEl(elp(i)) - EE(elp(i)));
+%     Edd = 0;
+%     for j = Np:-1:1
+%         Edd = Edd + Etm(j,elp(i));
+%         if Edd > Edif
+%             Edd = Edd - Etm(j,elp(i));
+%             break
+%         end
+%         Etm(j,elp(i)) = 0.0;
+%     end
+%     Etm(j,elp(i)) = Etm(j,elp(i)) - (Edif - Edd);
+% end
+% 
+% 
+% %nLHS = Etm + (-EEm - EEdfm -EEnfm);
+% invu = invV*u;
+% u = V*(sqrt(abs(Etm./J(1,:))).*sign(invu));
+% 
+% for k = 2:K
+%     u(Np,k-1) = (u(1,k)/2) + (u(Np,k-1)/2);
+%     %uf(Np,k-1) = u(Np,k-1);        %uncomment for not filter the boundaries of the elements
+%     %uf(1,k) = u(1,k);              %uncomment for not filter the boundaries of the elements
+% end
 
 
 

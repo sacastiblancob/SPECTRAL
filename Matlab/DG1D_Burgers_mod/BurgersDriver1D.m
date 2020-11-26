@@ -6,14 +6,14 @@
 %           epsilon = 0.1
 %           u(x,0) = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0
 
-clear
-clc
-Globals1D;
+% clear
+% clc
+% Globals1D;
 
 %%
 %CONTROL PANEL
 % Order of polymomials used for approximation
-N = 12;
+N = 10;
 
 %Final time
 FinalTime = 1.2;
@@ -27,18 +27,18 @@ iint = 0.0;     %1.0 for immproved integration, 0.0 for not
 
 %init Filter matrix
 %filter = ?
-filter = 0.0;   %1.0 for filtering, 0.0 for non-filtering
+filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
 t = 0;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
 Nc=3;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
 if t==2
-    s=34;           % exponential filter degree
+    s=5;           % exponential filter degree
 else
-    s=34;           % exponential filter degree
+    s=5;           % exponential filter degree
 end
 %viscosity constant
 %epsilon = 0.05;      %original
 %epsilon = 0.001;      %viscosity constant
-epsilon = 0.01;
+epsilon = 0.000001;
 
 % Generate simple mesh
 xL = -1;
@@ -64,10 +64,16 @@ u = -sin(2*pi*x/(xR-xL));
 EE = zeros(1,K);        %array for store RK4 steps of viscous dissipation
 EEdf = zeros(1,K);      %array for store RK4 steps of viscous fluxes
 EEnf = zeros(1,K);      %array for store RK4 steps of non-linear fluxes
-EEm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous dissipation
-EEdfm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous fluxes
-EEnfm = zeros(N+1,K);     %matrix for store RK4 steps of modal non-linear fluxes
-
+if iint==0
+    EEm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous dissipation
+    EEdfm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous fluxes
+    EEnfm = zeros(N+1,K);     %matrix for store RK4 steps of modal non-linear fluxes
+else
+    EEm = zeros(Nd+1,K);     %matrix for store RK4 steps of modal viscous dissipation
+    EEdfm = zeros(Nd+1,K);     %matrix for store RK4 steps of modal viscous fluxes
+    EEnfm = zeros(Nd+1,K);     %matrix for store RK4 steps of modal non-linear fluxes
+end
+    
 %Down and Up limits
 uBott = min(min(u)) - 0.1;
 uUp = max(max(u)) + 0.1;
@@ -86,9 +92,15 @@ uUp = max(max(u)) + 0.1;
   rese = zeros(1,K);      %result vector for energy dissipation due to viscosity
   resedf = zeros(1,K);    %result vector for energy dissipation flux over bound.
   resenf = zeros(1,K);    %result vector for energy flux due to non-linear term
-  resem = zeros(N+1,K);   %result matrix for energy modal disipation due to viscosity
-  resedfm = zeros(N+1,K);   %result matrix for energy modal disipation fluxes
-  resenfm = zeros(N+1,K);   %result matrix for energy modal non-linear fluxes
+  if iint==0
+      resem = zeros(N+1,K);   %result matrix for energy modal disipation due to viscosity
+      resedfm = zeros(N+1,K);   %result matrix for energy modal disipation fluxes
+      resenfm = zeros(N+1,K);   %result matrix for energy modal non-linear fluxes
+  else
+      resem = zeros(Nd+1,K);   %result matrix for energy modal disipation due to viscosity
+      resedfm = zeros(Nd+1,K);   %result matrix for energy modal disipation fluxes
+      resenfm = zeros(Nd+1,K);   %result matrix for energy modal non-linear fluxes
+  end
 %
 %  Compute time step size
 %
@@ -98,7 +110,7 @@ uUp = max(max(u)) + 0.1;
   %dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
   dt = 0.1*CFL*(xmin/umax);
   %dt = CFL*(xmin/umax);
-  dt = 0.0005;
+  %dt = 0.00005;
   Nsteps = ceil(FinalTime/dt);
   dt = FinalTime/Nsteps; 
 
@@ -115,7 +127,9 @@ uUp = max(max(u)) + 0.1;
   shapestr = { '-o','-x' };
 
 for tstep=1:Nsteps
-
+    if time > 0.4
+        pause
+    end
     for INTRK = 1:5
         timelocal = time + rk4c(INTRK)*dt;
         %[rhsu] = BurgersRHS1D(u,epsilon,xL,xR,timelocal);
@@ -208,6 +222,14 @@ for tstep=1:Nsteps
           resu = rk4a(INTRK)*resu + dt*rhsu;
           u = u+rk4b(INTRK)*resu;
         
+%           %Ensure continuity at element interfaces
+%             for k = 2:K
+%                 u(Np,k-1) = (u(1,k) + u(Np,k-1))/2;
+%                 u(1,k) = u(Np,k-1);
+%                 %uf(Np,k-1) = u(Np,k-1);        %uncomment for not filter the boundaries of the elements
+%                 %uf(1,k) = u(1,k);              %uncomment for not filter the boundaries of the elements
+%             end
+          
         % end BurgersRHS1D subroutine
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       
@@ -227,8 +249,8 @@ for tstep=1:Nsteps
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Filtering    
     if filter == 1.0
-        %u = filtering(u,F);
-        u = F*u;
+        u = filtering(u,F);
+        %u = F*u;
     end
     
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -248,8 +270,10 @@ for tstep=1:Nsteps
 %       plot(x,ua,'k')
 %       hold on
       for i = 1 : Elements
+%         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+%           'Markersize', 1, 'LineWidth', 2.0, 'Color','b');
         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
-          'Markersize', 1, 'LineWidth', 2 );
+          'Markersize', 1, 'LineWidth', 1.5);
         hold all
       end
       grid ( 'on' );
@@ -257,6 +281,8 @@ for tstep=1:Nsteps
       
       drawnow;
       hold off
+      
+%      plot ( xv, ustv, 'Markersize', 1, 'LineWidth', 1.5, 'Color','r');
       
 %       % Plotting energy by frequency
 %       subplot(1,2,2)
@@ -282,6 +308,7 @@ for tstep=1:Nsteps
 end
 
 Econ = EEt + dEEt + dfEEt + nfEEt;
+%Econ = EEt + dEEt + nfEEt;
 
 Postprocessing
 

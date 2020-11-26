@@ -12,12 +12,12 @@ for ii=1:N-1
     T(:,ii+2) = 2.*x.*T(:,ii+1) - T(:,ii);
 end
 
-for j=1:N+1
-    if (j==1 || j==N+1)
-        T(:,j) = T(:,j)/sqrt(pi);
-    else
-        T(:,j) = T(:,j)/sqrt(pi/2);
-    end
-end
+% for j=1:N+1
+%     if (j==1 || j==N+1)
+%         T(:,j) = T(:,j)/sqrt(pi);
+%     else
+%         T(:,j) = T(:,j)/sqrt(pi/2);
+%     end
+% end
 
 end

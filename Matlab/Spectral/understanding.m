@@ -11,7 +11,7 @@
 
 alpha = 0.0;
 beta = 0.0;
-p = 4;   %polynomial grade
+p = 6;   %polynomial grade
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %GLL nodes, vanderomende and GLL weights

@@ -1,4 +1,4 @@
-N = 6;
+N = 5;
 alp = 0;
 bet = 0;
 
@@ -70,11 +70,19 @@ Bu = swint.*Bc;
 % tiledlayout(2,1)
 
 % nexttile
-% plot(xp,Bc)
-% title('Classical Legendre')
-% xlabel('x')
-% ylabel('L(x)')
-% ylim([-3,3])
+plot(xp,Bc)
+title('Non-Normalized Legendre Polynomials and GLL nodes')
+xlabel('\zeta')
+ylabel('L(\zeta)')
+ylim([-1.2,1.2])
+
+hold on
+scatter(x,zeros(N+1,1))
+
+Bcad = legendre(xp,N+1);
+hold on
+plot(xp,Bcad(:,N+2),'LineStyle','--')
+
 % 
 % nexttile
 % plot(xp,Bu)
@@ -155,6 +163,7 @@ Ulf = Fl*u;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Chebyshev
 
+N = 5;
 alpc = -0.5;
 betc = -0.5;
 
@@ -165,8 +174,16 @@ Wc = spdiags(wc,0,N+1,N+1);
 %Chebyshev vandermonde matrix
 xaux = (-1:0.01:1)';
 Taux = chebyshev(xaux,N);
-%plot(xaux,Taux)
 T = chebyshev(xc,N);
+
+plot(xaux,Taux)
+title('Non-Normalized Chebyshev Polynomials and CGL nodes')
+xlabel('\zeta')
+ylabel('T(\zeta)')
+ylim([-1.2,1.2])
+
+hold on
+scatter(xc,zeros(N+1,1))
 
 %integral proof
 int = sum(wc.*xc.^2);  %equals to the integral between -1 and 1 of (x^2)/(sqrt(1-x^2))

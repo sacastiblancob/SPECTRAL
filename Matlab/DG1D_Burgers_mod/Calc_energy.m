@@ -13,33 +13,60 @@ else
 end
 
 %u times du in modal (for dissipation fluxes)
-udum = invV*(u.*deru);
+if iint==0
+    udum = invV*(u.*deru);
+else
+    udum = invVd*(ud.*deru);
+end
+
 %u cube in modal (for non-linear fluxes)
-u3m = invV*(u.^3);
+if iint==0
+    u3m = invV*(u.^3);
+else
+    u3m = invVd*(ud.^3);
+end
 
 %For viscous fluxes over boundaries
 if iint==0
     dflux = 2*epsilon.*u([1 N+1],:).*deru([1 N+1],:);
+    %dflux = 2*epsilon.*u([1 N+1],:);
     dflux = (dflux(2,:) - dflux(1,:));
 else
     dflux = 2*epsilon.*u([1 N+1],:).*deru([1 Nd+1],:);
     dflux = (dflux(2,:) - dflux(1,:));
 end
+sum(dflux)
 
-dfluxm = zeros(N+1,K);
-for i=1:K
-    dfm = 2*epsilon.*(udum(:,i).*V([1 N+1],:)');
-    dfluxm(:,i) = (dfm(:,2) - dfm(:,1));
+if iint==0
+    dfluxm = zeros(N+1,K);
+    for i=1:K
+        dfm = 2*epsilon.*(udum(:,i).*V([1 N+1],:)');
+        dfluxm(:,i) = (dfm(:,2) - dfm(:,1));
+    end
+else
+    dfluxm = zeros(Nd+1,K);
+    for i=1:K
+        dfm = 2*epsilon.*(udum(:,i).*Vd([1 Nd+1],:)');
+        dfluxm(:,i) = (dfm(:,2) - dfm(:,1));
+    end
 end
 
 %For non-linear flux over boundaries
 nflux = 2*(u([1 N+1],:).^3)./3;
 nflux = -(nflux(2,:) - nflux(1,:));
 
-nfluxm = zeros(N+1,K);
-for i=1:K
-    nfm = (2/3)*(u3m(:,i).*V([1 N+1],:)');
-    nfluxm(:,i) = -(nfm(:,2) - nfm(:,1));
+if iint==0
+    nfluxm = zeros(N+1,K);
+    for i=1:K
+        nfm = (2/3)*(u3m(:,i).*V([1 N+1],:)');
+        nfluxm(:,i) = -(nfm(:,2) - nfm(:,1));
+    end
+else
+    nfluxm = zeros(Nd+1,K);
+    for i=1:K
+        nfm = (2/3)*(u3m(:,i).*Vd([1 Nd+1],:)');
+        nfluxm(:,i) = -(nfm(:,2) - nfm(:,1));
+    end
 end
 
 %For dissipation term

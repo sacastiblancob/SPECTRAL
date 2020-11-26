@@ -11,8 +11,8 @@ for ii=1:K-1
     L(:,ii+2) = ((2*ii+1)/(ii+1)).*x.*L(:,ii+1) - ((ii)/(ii+1)).*L(:,ii);
 end
 
-for j=1:K+1
-     L(:,j)=L(:,j)/sqrt(2.0/(2.0*(j-1)+1));
-end
+% for j=1:K+1
+%      L(:,j)=L(:,j)/sqrt(2.0/(2.0*(j-1)+1));
+% end
 
 end
