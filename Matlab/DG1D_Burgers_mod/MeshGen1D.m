@@ -40,7 +40,7 @@ function [ Nv, VX, K, EToV ] = MeshGen1D ( xmin, xmax, K )
 %
 %  NV is the number of vertices.
 %
-  Nv = K + 1; 
+  Nv = K + 1;
 %
 %  VX contains the equally spaced vertex coordinates.
 %

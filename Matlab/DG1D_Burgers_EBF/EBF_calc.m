@@ -1,16 +1,22 @@
 
 Globals1D
 
-%Derivative of U;
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%Computing terms
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% Derivative of U
 deru = Dr*u./J;
+
 %u times du in modal (for dissipation fluxes)
 udum = invV*(u.*deru);
+
 %u cube in modal (for non-linear fluxes)
 u3m = invV*(u.^3);
 
-%
-%%% RHS %%% 
-%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Computing Right Hand Side terms
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 %Viscous fluxes
 dfluxm = zeros(N+1,K);
@@ -29,9 +35,9 @@ end
 %Viscous dissipation of Energy
 edism = -2*epsilon*(invV*deru).^2.*J(1,:);
 
-%
-%%% RK4 %%% 
-%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% RK4
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 %dissipation due to viscous term
 resem = rk4a(INTRK)*resem + dt*edism;
@@ -45,9 +51,11 @@ EEdfm = EEdfm + rk4b(INTRK)*resedfm;
 resenfm = rk4a(INTRK)*resenfm + dt*nfluxm;
 EEnfm = EEnfm + rk4b(INTRK)*resenfm;
 
-%
-%%% Actual Energy of the solution %%% 
-%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Actual Energy of the solution
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% Sum of modes^2
 invu = invV*u;
 Etm =(invu).^2.*J(1,:);
 
@@ -59,39 +67,42 @@ Etm =(invu).^2.*J(1,:);
 %   between LHS and RHS of above equation should be defined.
 %
 
-tol = 1;    %Tolerance in percentage of the initial energy.
-
-Etol = abs(sum(Etom))*(tol/100);
-LHS = Etm + (-EEm - EEdfm -EEnfm); %Left hand side
-
-Proofd = sum(LHS) < sum(Etom) - Etol;
-Proofu = sum(LHS) > sum(Etom) + Etol;
-el = 1:K;
-
-EEl = sum(LHS);
-elp = el(Proofu);
-
-for i = 1:length(elp)
-    Edif = EEl(elp(i)) - EE(elp(i));
-    Edd = 0;
-    for j = Np:-1:1
-        Edd = Edd + Etm(j,elp(i));
-        if Edd > Edif
-            Edd = Edd - Etm(j,elp(i));
-            break
-        end
-        Etm(j,elp(i)) = 0.0;
-    end
-    Etm(j,elp(i)) = Etm(j,elp(i)) - (Edif - Edd);
-end
-
-
-%nLHS = Etm + (-EEm - EEdfm -EEnfm);
-u = V*(sqrt(abs(Etm./J(1,:))).*sign(invu));
-
-
-% %u cube in modal (for non-linear fluxes)
-% nu3m = invV*(u.^3);
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% First try
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% tol = 1;    %Tolerance in percentage of the initial energy.
+% 
+% Etol = abs(sum(Etom))*(tol/100);
+% LHS = Etm + (-EEm - EEdfm -EEnfm); %Left hand side
+% 
+% Proofd = sum(LHS) < sum(Etom) - Etol;
+% Proofu = sum(LHS) > sum(Etom) + Etol;
+% el = 1:K;
+% 
+% EEl = sum(LHS);
+% elp = el(Proofu);
+% 
+% for i = 1:length(elp)
+%     Edif = EEl(elp(i)) - EE(elp(i));
+%     Edd = 0;
+%     for j = Np:-1:1
+%         Edd = Edd + Etm(j,elp(i));
+%         if Edd > Edif
+%             Edd = Edd - Etm(j,elp(i));
+%             break
+%         end
+%         Etm(j,elp(i)) = 0.0;
+%     end
+%     Etm(j,elp(i)) = Etm(j,elp(i)) - (Edif - Edd);
+% end
+% 
+% 
+% %nLHS = Etm + (-EEm - EEdfm -EEnfm);
+% u = V*(sqrt(abs(Etm./J(1,:))).*sign(invu));
+% 
+% 
+% % %u cube in modal (for non-linear fluxes)
+% % nu3m = invV*(u.^3);
 
 
 

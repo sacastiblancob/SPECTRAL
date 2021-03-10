@@ -49,11 +49,23 @@ Nfaces = 2;
 %
 r = JacobiGL ( 0, 0, N );
 %
+w = gllw(N);
+W = spdiags(w',0,N+1,N+1);
+C = ones(N+1,1);
+C(N+1) = N/(2*N + 1);
+C = spdiags(C,0,N+1,N+1);
+%
+%
 %  Build reference element matrices
 %
 V  = Vandermonde1D ( N, r ); 
 invV = inv ( V );
 Dr = Dmatrix1D ( N, r, V );
+
+%Lobatto basis
+[L,Ml,Sl,K2l,K4l,Drl]=lobatto(r,N);
+invL = inv(L);
+
 %
 %  Create surface integral terms
 %

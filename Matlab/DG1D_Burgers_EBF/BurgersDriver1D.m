@@ -58,7 +58,7 @@ K = 10;
 StartUp1D;
 
 % Set initial conditions
-epsilon = 0.0;
+epsilon = 0.00005;
 u = -sin(2*pi*x/(xR-xL));
 % u = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0;
 
@@ -81,6 +81,7 @@ FinalTime = 1.5;
   CFL = 0.25;
   umax = max(max(abs(u)));
   dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));
+  dt = 0.00025;
   Nsteps = ceil(FinalTime/dt);
   dt = FinalTime/Nsteps; 
 
@@ -189,8 +190,10 @@ FinalTime = 1.5;
     
     if ( rem ( tstep, 10 ) == 0 )
 
-      % Plotting analytical and numerical solutions  
-%      subplot(1,2,1)
+      %
+      % Plotting analytical and numerical solutions
+      %
+     subplot(1,2,1)
 %       %ploting analytical
 %       plot(x,ua,'k')
 %       hold on
@@ -205,16 +208,19 @@ FinalTime = 1.5;
       drawnow;
       hold off
       pause(0.1)
-%       % Plotting energy by frequency
-%       subplot(1,2,2)
-%       plot(modes,Etom);
-%       xlim([-0.1 N+0.1]);
-%       ylim([0 0.2]);
-%       legend('1','2','3','4','5','6','7','8','9','10','11','12')
-%       drawnow
+      
+     %
+     % Plotting energy by frequency
+     %
+      subplot(1,2,2)
+      %bar(1:9,Etm);
+      bar(sum(Etm,2));
+      xlim([-0.1 N+0.1]);
+      ylim([0 0.2]);
+      legend('1','2','3','4','5','6','7','8','9','10','11','12')
+      drawnow
       
     end
     
   end
-
 

@@ -24,11 +24,16 @@ function [F,filterdiag] = Filter1D(N,Nc,s,t,V,W,r)
     C = spdiags(C,0,N+1,N+1);
     
     % Initialize filter function
+    
+    % Exponential filter
+    for i=Nc:N
+        filterdiag(i+1) = exp(-alp*((i-Nc)/(N-Nc))^s);
+    end
+    
+%     % Step filter
 %     for i=Nc:N
-%         filterdiag(i+1) = exp(-alp*((i-Nc)/(N-Nc))^s);
+%         filterdiag(i) = 0.0;
 %     end
-    filterdiag(N+1) = 0;
-    %filterdiag(N) = 0;
     
     %t==0 means non-unitary filter
     %t==1 means Sumedh Unitary filter

@@ -100,7 +100,7 @@ x = ones(N+1,1) * VX(va) + 0.5 * (r+1) * (VX(vb)-VX(va));
 if iint==1
     xd = ones(Nd+1,1) * VX(va) + 0.5 * (rd+1) * (VX(vb)-VX(va));
 end
-    
+
 %
 %  Calculate geometric factors
 %

@@ -1,4 +1,42 @@
+% clear;
+clc;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Licensing:
+%
+%    Permission to use this software for noncommercial
+%    research and educational purposes is hereby granted
+%    without fee.  Redistribution, sale, or incorporation
+%    of this software into a commercial product is prohibited.
+%
+%    THE AUTHORS OR PUBLISHER DISCLAIMS ANY AND ALL WARRANTIES
+%    WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED
+%    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR ANY
+%    PARTICULAR PURPOSE.  IN NO EVENT SHALL THE AUTHORS OR
+%    THE PUBLISHER BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+%    CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
+%    RESULTING FROM LOSS OF USE, DATA OR PROFITS.
+%
+%  Modified:
+%
+%    20 September 2018
+%
+%  Author:
+%
+%    Original version by Jan Hesthaven, Tim Warburton.
+%    Some modifications by John Burkardt.
+%
+%  Reference:
+%
+%    Jan Hesthaven, Tim Warburton,
+%    Nodal Discontinuous Galerkin Methods: 
+%    Algorithms, Analysis, and Applications,
+%    Springer, 2007,
+%    ISBN: 978-0387720654.
+%
+
 % Driver script for solving the 1D burgers equations
+% Professor Jan S. Hesthaven
 %
 % PDE:
 %           du/dt + du^2/dx = 0  for -1 < x < +1
@@ -10,10 +48,12 @@
 % clc
 % Globals1D;
 
-%%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %CONTROL PANEL
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 % Order of polymomials used for approximation
-N = 10;
+N = 12;
 
 %Final time
 FinalTime = 1.2;
@@ -27,26 +67,37 @@ iint = 0.0;     %1.0 for immproved integration, 0.0 for not
 
 %init Filter matrix
 %filter = ?
-filter = 1.0;   %1.0 for filtering, 0.0 for non-filtering
-t = 0;          % 0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
-Nc=3;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
+%1.0 for filtering, 0.0 for non-filtering
+filter = 0.0;
+
+% t=0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
+t = 0;          
 if t==2
-    s=5;           % exponential filter degree
+    Nc=4;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
+    s=1;           % exponential filter degree
 else
-    s=5;           % exponential filter degree
+    Nc = 1;
+    s=6;           % exponential filter degree
 end
+
 %viscosity constant
-%epsilon = 0.05;      %original
-%epsilon = 0.001;      %viscosity constant
-epsilon = 0.000001;
+% epsilon = 0.0;      %original
+% epsilon = 0.001;      %No need of filtering
+epsilon = 0.00006;      %viscosity constant (need of filtering and works)
+% caso de éxito es epsilon=0.0005, Elements=12, N=16, zeros and
+% filterdiag(i), con RHSm de test
+% epsilon = 0.00025;      %viscosity constant (need of filtering and does not work)
+%epsilon = 0.000001;
 
 % Generate simple mesh
 xL = -1;
 xR = 1;
-Elements = 10;
+Elements = 12;
 [Nv, VX, K, EToV] = MeshGen1D(xL,xR,Elements);
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %END CONTROL PANEL
-%%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 % Initialize solver and construct grid and metric
 StartUp1D;
@@ -57,53 +108,16 @@ if filter==1.0
     [F,L] = Filter1D(N,Nc,s,t,V,W,r);
 end
 
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % Set initial conditions
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %u = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0;    %original Intitial C.
 %u = (x<-0.5)*2;     %step initial condition
 u = -sin(2*pi*x/(xR-xL));
-EE = zeros(1,K);        %array for store RK4 steps of viscous dissipation
-EEdf = zeros(1,K);      %array for store RK4 steps of viscous fluxes
-EEnf = zeros(1,K);      %array for store RK4 steps of non-linear fluxes
-if iint==0
-    EEm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous dissipation
-    EEdfm = zeros(N+1,K);     %matrix for store RK4 steps of modal viscous fluxes
-    EEnfm = zeros(N+1,K);     %matrix for store RK4 steps of modal non-linear fluxes
-else
-    EEm = zeros(Nd+1,K);     %matrix for store RK4 steps of modal viscous dissipation
-    EEdfm = zeros(Nd+1,K);     %matrix for store RK4 steps of modal viscous fluxes
-    EEnfm = zeros(Nd+1,K);     %matrix for store RK4 steps of modal non-linear fluxes
-end
-    
-%Down and Up limits
-uBott = min(min(u)) - 0.1;
-uUp = max(max(u)) + 0.1;
 
-% Solve Problem
-%[u] = Burgers1D ( u, epsilon, xL, xR, FinalTime );
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Original Burgers1D subroutine - Hetshaven
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%init time
-  time = 0.0;
-%
-%  Runge-Kutta residual storage  
-%
-  resu = zeros(Np,K);
-  rese = zeros(1,K);      %result vector for energy dissipation due to viscosity
-  resedf = zeros(1,K);    %result vector for energy dissipation flux over bound.
-  resenf = zeros(1,K);    %result vector for energy flux due to non-linear term
-  if iint==0
-      resem = zeros(N+1,K);   %result matrix for energy modal disipation due to viscosity
-      resedfm = zeros(N+1,K);   %result matrix for energy modal disipation fluxes
-      resenfm = zeros(N+1,K);   %result matrix for energy modal non-linear fluxes
-  else
-      resem = zeros(Nd+1,K);   %result matrix for energy modal disipation due to viscosity
-      resedfm = zeros(Nd+1,K);   %result matrix for energy modal disipation fluxes
-      resenfm = zeros(Nd+1,K);   %result matrix for energy modal non-linear fluxes
-  end
-%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %  Compute time step size
-%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   xmin = min(abs(x(1,:)-x(2,:)));
   CFL = 0.25;
   umax = max(max(abs(u)));
@@ -114,9 +128,9 @@ uUp = max(max(u)) + 0.1;
   Nsteps = ceil(FinalTime/dt);
   dt = FinalTime/Nsteps; 
 
-%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %  Initial Energy
-%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   Init_energy
   modes = (0:N)';
   
@@ -127,9 +141,13 @@ uUp = max(max(u)) + 0.1;
   shapestr = { '-o','-x' };
 
 for tstep=1:Nsteps
-    if time > 0.4
-        pause
-    end
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Going into RK4
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%     if time >= 0.4
+%         pause
+%     end
     for INTRK = 1:5
         timelocal = time + rk4c(INTRK)*dt;
         %[rhsu] = BurgersRHS1D(u,epsilon,xL,xR,timelocal);
@@ -199,15 +217,28 @@ for tstep=1:Nsteps
           
           if deal==1.0
               %umd = invV*u;             %u modal
-              umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
-              ud = Vd*umd;                                              %going to nodal with more nodes
-              dfdrd = Drd * ( ud .^ 2 / 2);                             %computing non-linear term with more nodes
+              
+              %u modal and zero-padding
+              umd = [invV*u ; zeros(length(rd)-length(r),Elements)];
+              
+              %going to nodal with more nodes
+              ud = Vd*umd;
+              
+              %computing non-linear term with more nodes
+              dfdrd = Drd * ( ud .^ 2 / 2);
               %dfdrd = ud .^ 2;
-              umd = invVd*dfdrd;                                        %putting the non-linear result in modal
-              umd = umd(1:N+1,:);                                       %extracting the padding part
-              ud = V*umd;                                               %going back to original nodal
+              
+              %settling the non-linear result in modal
+              umd = invVd*dfdrd;
+              
+              %substraction the zero padding part
+              umd = umd(1:N+1,:);
+              
+              %going back to original nodal
+              ud = V*umd;
 
-              dfdr = ud - Dr * (sqrt ( epsilon ) * q );                 %computing the discretized term
+              %computing the discretized term
+              dfdr = ud - Dr * (sqrt ( epsilon ) * q );
               %dfdr = Dr * ( (ud ./ 2) - sqrt ( epsilon ) * q );  
           else
               dfdr = Dr * ( u .^ 2 / 2 - sqrt ( epsilon ) * q );
@@ -243,7 +274,11 @@ for tstep=1:Nsteps
 %     %computing analytical solution
 %     ua = analitica(x,time+dt,epsilon);
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % energy storage        
+  % energy storage
+% Stop condition (sometimes useful)
+%     if time > 0.1
+%         pause
+%     end
     Store_energy
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -304,11 +339,7 @@ for tstep=1:Nsteps
 %     ylim([uBott uUp]);
 %     drawnow
 
-
 end
-
-Econ = EEt + dEEt + dfEEt + nfEEt;
-%Econ = EEt + dEEt + nfEEt;
 
 Postprocessing
 

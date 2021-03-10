@@ -3,30 +3,46 @@
 
 Globals1D
 
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %Derivative of U
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if iint==0
-    deru = Dr*u./J;        %without more nodes
+    %Computing the first derivative (without more nodes)
+    deru = Dr*u./J;
 else
-    umd = [invV*u ; zeros(length(rd)-length(r),Elements)];    %u modal and zero-padding
-    ud = Vd*umd;                                              %going to nodal with more nodes
+    %u modal and zero-padding
+    umd = [invV*u ; zeros(length(rd)-length(r),Elements)];
+    
+    %going to nodal with more nodes
+    ud = Vd*umd;
+    
+    %Computing the first derivative
     deru = Drd*ud./Jd;
 end
 
-%u times du in modal (for dissipation fluxes)
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% u times du in modal (for dissipation fluxes)
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if iint==0
     udum = invV*(u.*deru);
 else
     udum = invVd*(ud.*deru);
 end
 
-%u cube in modal (for non-linear fluxes)
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% u cube in modal (for non-linear fluxes)
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if iint==0
     u3m = invV*(u.^3);
 else
     u3m = invVd*(ud.^3);
 end
 
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %For viscous fluxes over boundaries
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+%Over every subdomain
 if iint==0
     dflux = 2*epsilon.*u([1 N+1],:).*deru([1 N+1],:);
     %dflux = 2*epsilon.*u([1 N+1],:);
@@ -35,8 +51,9 @@ else
     dflux = 2*epsilon.*u([1 N+1],:).*deru([1 Nd+1],:);
     dflux = (dflux(2,:) - dflux(1,:));
 end
-sum(dflux)
+%sum(dflux)
 
+%Over every subdomain and mode
 if iint==0
     dfluxm = zeros(N+1,K);
     for i=1:K
@@ -51,10 +68,15 @@ else
     end
 end
 
-%For non-linear flux over boundaries
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% For non-linear flux over boundaries
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% Over every subdomain
 nflux = 2*(u([1 N+1],:).^3)./3;
 nflux = -(nflux(2,:) - nflux(1,:));
 
+% Over every subdomain and mode
 if iint==0
     nfluxm = zeros(N+1,K);
     for i=1:K
@@ -69,39 +91,74 @@ else
     end
 end
 
-%For dissipation term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% For dissipation term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% For every subdomain
 if iint==0
     edis = -(2*epsilon*w*(((deru).^2).*J));
-    edism = -2*epsilon*(invV*deru).^2.*J(1,:);
 else
     edis = -(2*epsilon*wd*(((deru).^2).*Jd));
+end
+
+%For every subdomain and mode
+if iint==0
+    edism = -2*epsilon*(invV*deru).^2.*J(1,:);
+else
     edism = -2*epsilon*(invVd*deru).^2.*Jd(1,:);
 end
 
-%solving energy
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% solving energy
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %RHSE of energy equation integrated over a domain
 %rhse = edis; %dflux + nflux + edis;
 
-%dissipation due to viscous term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% dissipation due to viscous term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% Over every subdomain
 rese = rk4a(INTRK)*rese + dt*edis;
 EE = EE + rk4b(INTRK)*rese;
 
+% Over every subdomain and mode
 resem = rk4a(INTRK)*resem + dt*edism;
 EEm = EEm + rk4b(INTRK)*resem;
 
-%viscous fluxes term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% viscous fluxes term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% Over every subdomain
 resedf = rk4a(INTRK)*resedf + dt*dflux;
 EEdf = EEdf + rk4b(INTRK)*resedf;
 
+% Over every subdomain and mode
 resedfm = rk4a(INTRK)*resedfm + dt*dfluxm;
 EEdfm = EEdfm + rk4b(INTRK)*resedfm;
 
-%non-linear fluxes term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% non-linear fluxes term
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% Over every subdomain
 resenf = rk4a(INTRK)*resenf + dt*nflux;
 EEnf = EEnf + rk4b(INTRK)*resenf;
 
+% Over every subdomain and mode
 resenfm = rk4a(INTRK)*resenfm + dt*nfluxm;
 EEnfm = EEnfm + rk4b(INTRK)*resenfm;
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% end
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 
 
