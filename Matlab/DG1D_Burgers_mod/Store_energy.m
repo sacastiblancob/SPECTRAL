@@ -8,26 +8,35 @@ Globals1D
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if iint == 0
     Et = u.^2;
+    Eta = ua.^2; %(analytical)
 
     %computing integral with default nodes
     EEt(tstep+1,:) = w*(Et.*J);
+    EEta(tstep+1,:) = w*(Eta.*J); %(analytical)
 else
     %u modal and zero-padding
     umd = [invV*u ; zeros(length(rd)-length(r),Elements)];
+    umda = [invV*ua ; zeros(length(rd)-length(r),Elements)]; %(analytical)
     
     %to nodal with more modes
     ud = Vd*umd;
+    uda = Vd*umda; %(analytical)
     
     %squaring
     Et = ud.^2;
+    Eta = uda.^2; %(analytical)
 
     %computing integral with more nodes
     EEt(tstep+1,:) = wd*(Et.*Jd);
+    EEta(tstep+1,:) = wd*(Eta.*Jd); %(analytical)
     umd = umd*0.0;
     ud = ud*0.0;
+    umda = umd*0.0; %(analytical)
+    uda = ud*0.0; %(analytical)
 end
 
 E(tstep+1) = sum(EEt(tstep+1,:));
+Ea(tstep+1) = sum(EEta(tstep+1,:));  %(analytical)
 
 %     %Computing dissipate energy due to viscosity
 %     %duv = (1./J).*Dr*u;
@@ -42,17 +51,29 @@ E(tstep+1) = sum(EEt(tstep+1,:));
 dEEt(tstep+1,:) = -EE;
 dEEtm(:,tstep+1) = reshape(-EEm,1,(N+1)*K);
 
+%analytical
+dEEta(tstep+1,:) = -EEa;
+dEEtma(:,tstep+1) = reshape(-EEma,1,(N+1)*K);
+
 %
 % Dissipation flux energy total and by mode
 %
 dfEEt(tstep+1,:) = -EEdf;
 dfEEtm(:,tstep+1) =  reshape(-EEdfm,1,(N+1)*K);
 
+%analytical
+dfEEta(tstep+1,:) = -EEdfa;
+dfEEtma(:,tstep+1) =  reshape(-EEdfma,1,(N+1)*K);
+
 %
 % Nonlinear flux energy total and by mode
 %
 nfEEt(tstep+1,:) = -EEnf;
 nfEEtm(:,tstep+1) = reshape(-EEnfm,1,(N+1)*K);
+
+%analytical
+nfEEta(tstep+1,:) = -EEnfa;
+nfEEtma(:,tstep+1) = reshape(-EEnfma,1,(N+1)*K);
 
 %
 % Total energy in the system viscous, viscous flux, and nonlinear flux
@@ -61,16 +82,28 @@ Ev(tstep+1) = -1.0*(sum(EE));
 Evf(tstep+1) = -1.0*(sum(EEdf));
 Enlf(tstep+1) = -1.0*(sum(EEnf));
 
+%analytical
+Eva(tstep+1) = -1.0*(sum(EEa));
+Evfa(tstep+1) = -1.0*(sum(EEdfa));
+Enlfa(tstep+1) = -1.0*(sum(EEnfa));
+
 %    Evtot = sum(EE);
 %    Ev(tstep+1) = Ev(tstep) + Evtot;
 
 %Storing times
 T(tstep+1) = time;
 
+%
 %Energy per mode
+%
 um = invV*u;
 Etm =(invV*u).^2.*J(1,:);
 EEtm(:,tstep+1) = reshape(Etm,1,(N+1)*K);
+
+%analytical
+uma = invV*ua;
+Etma =(invV*ua).^2.*J(1,:);
+EEtma(:,tstep+1) = reshape(Etma,1,(N+1)*K);
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % storing energy for Hovmoller plots
@@ -143,6 +176,8 @@ Times(tstep,:) = time*ones(1,K*(N+1));
 % Differences in energy
 %
 %Legentre
+
+%By element and mode
 RHSm = Etm-EEnfm-EEm-EEdfm;
 dle = sum(RHSm,1) - Eto;
 
@@ -211,116 +246,171 @@ dle = sum(RHSm,1) - Eto;
 %Correction storage
 alp = -log(eps);
 umc = um;
-tol = 1E-2;
+tol = 1E-5;
 corr = zeros(N+1,K);
 
-%eras could be RHSm, or EEnfm
+%eras could be RHSm, or EEnfm (from what to take to correct)
 % eras = RHSm;
-eras = EEnfm;
-for k=1:K
-%    if(abs(dle(k))>= tol)
-%    if(dle(k)>= tol)
-   if(dle(k)> tol)
-       for i=N+1:-1:1
-           % Computing corr from EEnfm
-%            if sign(EEnfm(i,k))==sign(dle(k))
-%                corr(i,k) = corr(i,k) + EEnfm(i,k);
-%                if abs(sum(corr(:,k))) >= abs(dle(k))
-% %                    umc(i:N+1,k) = 0.0;
-%                    break
-%                end
-%            end   
-           % Computing corr from eras
-           if sign(eras(i,k))==sign(dle(k))
-               corr(i,k) = corr(i,k) + eras(i,k);
-               if abs(sum(corr(:,k))) >= abs(dle(k))
-%                    umc(i:N+1,k) = 0.0;
-                   break
-               end
-           end  
-       end
-       filterdiag = ones(N+1,1);
-%        s = ((N+1)-i)/2;
-%        s = ((N+1)-i);
-       s = i;
-       Nc = i;
-       for j=Nc:N
-% Exponential filter
-           if Nc==N
-               filterdiag(j+1) = 1.0;
-           else
-               filterdiag(j+1) = exp(-alp*((j-Nc)/(N-Nc))^s);
+% eras = -EEnfm;
+% eras = -EEnfm - EEm;
+% eras = EEnfm + EEm;
+% eras = Etm - EEnfm;
+eras = EEnfm+EEm+EEdfm;
+
+%Energy balance slope in the wholde domain
+Esiw = E(tstep+1)+Ev(tstep+1)+Evf(tstep+1)+Enlf(tstep+1);
+Espw = E(tstep)+Ev(tstep)+Evf(tstep)+Enlf(tstep);
+Ediffw = (Esiw-Espw);
+Eslopew = Ediffw/dt;
+tolw = 0;
+
+%Energy balance slope by subdomain
+% Esp = E(tstep)+Ev(tstep)+Evf(tstep)+Enlf(tstep);
+% Esi = E(tstep+1)+Ev(tstep+1)+Evf(tstep+1)+Enlf(tstep+1);
+% Esp = E(tstep);
+% Esi = E(tstep+1);
+Esp = EEt(tstep,:)+dEEt(tstep,:)+dfEEt(tstep,:)+nfEEt(tstep,:);
+Esi = EEt(tstep+1,:)+dEEt(tstep+1,:)+dfEEt(tstep+1,:)+nfEEt(tstep+1,:);
+Ediff = (Esi-Esp);
+Eslope = Ediff/dt;
+% tole = 1E-5;
+tole = 0;
+
+disp([Eslope Eslopew time])
+
+%changing dle
+dle = Ediff;
+
+% if Eslopew > tolw
+    for k=1:K
+    %    if(abs(dle(k))>= tol)
+    %    if(dle(k)>= tol)
+    %    if(dle(k)> tol)
+        if (Eslope(k) > tole)
+           for i=N+1:-1:1
+               % Computing corr from EEnfm
+    %            if sign(EEnfm(i,k))==sign(dle(k))
+    %                corr(i,k) = corr(i,k) + EEnfm(i,k);
+    %                if abs(sum(corr(:,k))) >= abs(dle(k))
+    % %                    umc(i:N+1,k) = 0.0;
+    %                    break
+    %                end
+    %            end   
+               % Computing corr from eras
+               if sign(eras(i,k))==sign(dle(k))
+                   corr(i,k) = corr(i,k) + eras(i,k);
+                   if abs(sum(corr(:,k))) >= abs(dle(k))
+    %                    umc(i:N+1,k) = 0.0;
+                       break
+                   end
+               end  
            end
-% Zeros all
-%            if Nc==N
-%                filterdiag(j+1) = 0.0;
-%            else
-%                filterdiag(j+1) = 0.0;
-%            end
+           filterdiag = ones(N+1,1);
+           s = ((N+1)-i)/2;
+%            s = ((N+1)-i);
+%            s = ((N+1)-i)*100;
+    %        s = i;
+           Nc = i;
+%            Nc = N-4;
+           for j=Nc:N
+    % Exponential filter
+               if Nc==N
+%                    filterdiag(j+1) = 1.0;
+                   filterdiag(j+1) = 0.0;
+                   filterdiag(j) = 0.0;
+               else
+                   filterdiag(j+1) = exp(-alp*((j-Nc)/(N-Nc))^s);
+               end
+    % Zeros all
+%                if Nc==N
+%                    filterdiag(j+1) = 0.0;
+%                else
+%                    filterdiag(j+1) = 0.0;
+%                end
+           end
+    %        i
+    %        k
+    %        filterdiag
+
+    %
+    %  This part is valid only with zeros all option
+    %
+    %        corr(i,k) = dle(k) - sum(corr(i+1:end,k));
+    %        if abs(eras(i,k)) == 0
+    %            filterdiag(i) = 1.0;
+    %        else
+    %            if abs(eras(i,k))<tol
+    %                filterdiag(i) = 1.0;
+    %            else
+    %                filterdiag(i) = 1.0-((abs(eras(i,k)) - abs(corr(i,k)))/abs(eras(i,k)));
+    % %            filterdiag(i) = ((abs(eras(i,k)) - abs(corr(i,k)))/abs(eras(i,k)));
+    %            end
+    %        end
+    %        %always ensuring the zero polynomial
+    % %        filterdiag(1) = 1.0;
+    % %        filterdiag(2) = 1.0;
+    %        
+    % %        %always ensuring compatibility of first order polynomial
+    % %        if filterdiag(2) == 0.0
+    % %             filterdiag(2) = sqrt(2/3);
+    % %        end
+
+    %
+    % End part only valid with zeros all zeros all
+    %
+
+           %computing new modal values
+           umc(:,k) = filterdiag.*umc(:,k);
+
+    %        %always ensuring compatibility of first order polynomial
+    %        if filterdiag(2) == 0.0
+    %             umc(2,k) = (u(N+1,k)-u(1,k))/(2*V(N+1,2));
+    %        end
        end
-%        i
-%        k
-%        filterdiag
-       corr(i,k) = dle(k) - sum(corr(i+1:end,k));
-       if abs(eras(i,k)) == 0
-           filterdiag(i) = 1.0;
-       else
-           filterdiag(i) = 1.0-((abs(eras(i,k)) - abs(corr(i,k)))/abs(eras(i,k)));
-%            filterdiag(i) = ((abs(eras(i,k)) - abs(corr(i,k)))/abs(eras(i,k)));
-       end
-       %always ensuring the zero polynomial
-%        filterdiag(1) = 1.0;
-%        filterdiag(2) = 1.0;
-       
-%        %always ensuring compatibility of first order polynomial
-%        if filterdiag(2) == 0.0
-%             filterdiag(2) = sqrt(2/3);
-%        end
-       
-       %computing new modal values
-       umc(:,k) = filterdiag.*umc(:,k);
-       
-%        %always ensuring compatibility of first order polynomial
-%        if filterdiag(2) == 0.0
-%             umc(2,k) = (u(N+1,k)-u(1,k))/(2*V(N+1,2));
-%        end
-   end
-end
-% pause
-% Correction applied
-coa = Etm - EEnfm - EEm - EEdfm - corr;
+    end
+    % pause
+    % Correction applied
+%     coa = Etm - EEnfm - EEm - EEdfm - corr;
 
-%Legentre
-dle2 = sum(coa,1) - Eto;
+    %Legentre
+%     dle2 = sum(coa,1) - Eto;
 
-% % Etml corrected
-% Etmc = Etm - corr;
-%  
-% % Going back to nodal
-% % Etm =(invV*u).^2.*J(1,:);
-% invVu = sqrt(Etmc.*(1./J)).*sign(invV*u);
+    % % Etml corrected
+    % Etmc = Etm - corr;
+    %  
+    % % Going back to nodal
+    % % Etm =(invV*u).^2.*J(1,:);
+    % invVu = sqrt(Etmc.*(1./J)).*sign(invV*u);
 
-% umc(N-4:end,:) = 0.0;
-% umc(N:end,:) = 0.5*umc(N:end,:);
-% umc(corr~=0) = 0;
-% umc(corr~=0) = (1/(1+a))*umc(corr~=0);
-% umc = umc + (sqrt(abs(corr)).*sign(corr))*(0.1/(1+a));
-% umc = umc + (sqrt(abs(corr)).*sign(corr));
-% u = V*umc;
+    % umc(N-4:end,:) = 0.0;
+    % umc(N:end,:) = 0.5*umc(N:end,:);
+    % umc(corr~=0) = 0;
+    % umc(corr~=0) = (1/(1+a))*umc(corr~=0);
+    % umc = umc + (sqrt(abs(corr)).*sign(corr))*(0.1/(1+a));
+    % umc = umc + (sqrt(abs(corr)).*sign(corr));
+    u = V*umc;
 
-% %Ensuring continuity
-% for k = 2:K
-%     u(Np,k-1) = (u(2,k) + u(Np-1,k-1))/2;
-%     u(1,k) = u(Np,k-1);
+    % %Ensuring continuity
+    % for k = 2:K
+    %     u(Np,k-1) = (u(2,k) + u(Np-1,k-1))/2;
+    %     u(1,k) = u(Np,k-1);
+    % end
+    % for k = 2:K
+    %     u(Np,k-1) = (u(1,k) + u(Np,k-1))/2;
+    %     u(1,k) = u(Np,k-1);
+    % end
 % end
+
+
+% % %Ensuring continuity
+% % for k = 2:K
+% %     u(Np,k-1) = (u(2,k) + u(Np-1,k-1))/2;
+% %     u(1,k) = u(Np,k-1);
+% % end
 % for k = 2:K
 %     u(Np,k-1) = (u(1,k) + u(Np,k-1))/2;
 %     u(1,k) = u(Np,k-1);
 % end
-
-
-
-
 
 
 

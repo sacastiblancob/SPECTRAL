@@ -12,7 +12,7 @@ Globals1D;
 %%
 %CONTROL PANEL
 % Order of polymomials used for approximation
-N = 12;
+N = 50;
 
 %Final time
 FinalTime = 1.2;
@@ -37,7 +37,7 @@ end
 
 %viscosity constant
 %epsilon = 0.01;
-nu = 0.0;
+nu = 0.0005;
 epsilon = nu;
 
 % Generate simple mesh
@@ -63,6 +63,7 @@ end
 %uv = exp(-xv.^2/sqrt(0.01));
 uv = -sin(pi*xv);
 u = vec2matrix(uv,K);
+ua = u; %(analytical)
 EE = zeros(1,K);
 EEdf = zeros(1,K);
 EEnf = zeros(1,K);
@@ -81,11 +82,11 @@ uUp = max(max(u)) + 0.1;
 %
 %  Runge-Kutta residual storage  
 %
-  %resu = zeros(Np,K);
+%   resu = zeros(Np,K);
   resu = zeros(Ns,1);
-  rese = zeros(1,K);      %result vector for energy disipation due to viscosity
-  resedf = zeros(1,K);    %result vector for energy disipation flux over bound.
-  resenf = zeros(1,K);    %result vector for energy flux due to non-linear term
+%   rese = zeros(1,K);      %result vector for energy disipation due to viscosity
+%   resedf = zeros(1,K);    %result vector for energy disipation flux over bound.
+%   resenf = zeros(1,K);    %result vector for energy flux due to non-linear term
 %
 %  Compute time step size
 %
@@ -209,7 +210,7 @@ for tstep=1:Nsteps
     
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Analitical
-    % ua = analitica(x,time+dt,epsilon);
+    ua = analitica(x,time+dt,epsilon);
      
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % energy storage        
@@ -255,69 +256,66 @@ for tstep=1:Nsteps
     time = time + dt;
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Plotting
-    %Getting uv (vector) to v (matrix)
-    %u = vec2matrix(uv,K);
-    
-%     %ploting
-    %plot(xv,uv)
-    plot(x,u)
-    hold on
-    %plot(x,ua);
-    xlim([xL xR]);
-    ylim([-1.1 1.1]);
-    grid on
-    drawnow
-    hold off
-%     error = abs(ua-uv);
-%     semilogy(xv,error)
-%     ylim([1E-10 1E-2])
+    %
+    %  Display solution on every 10th time step.
+    %
+    if ( rem ( tstep, 3 ) == 0 )
+
+      % Plotting analytical and numerical solutions  
+%       subplot(1,2,1)
+      %ploting analytical
+      plot(x,ua,'k')
+      hold on
+      for i = 1 : Elements
+%         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+%           'Markersize', 1, 'LineWidth', 2.0, 'Color','b');
+        plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+          'Markersize', 1, 'LineWidth', 1.5);
+        hold all
+      end
+      grid ( 'on' );
+      axis ( [ xL, xR, uBott, uUp ] );
+      
+      drawnow;
+      hold off
+      
+%      plot ( xv, ustv, 'Markersize', 1, 'LineWidth', 1.5, 'Color','r');
+      
+%       % Plotting energy by frequency
+%       subplot(1,2,2)
+%       plot(modes,Etom);
+%       xlim([-0.1 N+0.1]);
+%       ylim([0 0.2]);
+%       legend('1','2','3','4','5','6','7','8','9','10','11','12')
+%       drawnow
+      
+    end
+  
+  
+%   % Plotting
+%     %Getting uv (vector) to v (matrix)
+%     %u = vec2matrix(uv,K);
+%     
+% %     %ploting
+%     %plot(xv,uv)
+%     plot(x,u)
+%     hold on
+%     %plot(x,ua);
+%     xlim([xL xR]);
+%     ylim([-1.1 1.1]);
+%     grid on
 %     drawnow
+%     hold off
+% %     error = abs(ua-uv);
+% %     semilogy(xv,error)
+% %     ylim([1E-10 1E-2])
+% %     drawnow
     
 end
 
-Econ = EEt + dEEt + dfEEt + nfEEt;
-
-% hold on
-% plot(T,E)
-% hold on
-% plot(T,Ev)
-% hold on
-% plot(T,Evf)
-% hold on
-% plot(T,Enlf)
-% hold on
-% Ebal = E+Ev+Evf+Enlf;
-% plot(T,Ebal)
-% legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
-% %legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
-% title('Energy vs Time, \nu=0.0, \Omega = whole domain')
-% %ylim([-E(1)/10 E(1)+E(1)/5])
-% ylim([-0.1 1.6])
-% xlim([T(1) T(tstep+1)])
-% %xlim([T(1) 0.8])
-% ylabel('Energy')
-% xlabel('Time')
-% 
-% a=5;
-% liminf = min([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])-EEt(1,a)/10;
-% limsup = max([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])+EEt(1,a)/1.5;
-% 
-% plot(T,EEt(:,a))
-% hold on
-% plot(T,dEEt(:,a))
-% plot(T,dfEEt(:,a))
-% plot(T,nfEEt(:,a))
-% plot(T,Econ(:,a))
-% legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
-% title('Energy vs Time, \nu=0.0, \Omega = 5th domain')
-% %ylim([liminf limsup])
-% %ylim([-0.22 0.32])
-% ylim([-0.5 0.2])
-% xlim([T(1) T(tstep+1)])
-% %xlim([T(1) 0.8])
-% ylabel('Energy')
-% xlabel('Time')
+Postprocessing
 
 %end Burgers1D subroutine
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

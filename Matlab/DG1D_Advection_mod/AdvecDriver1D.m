@@ -72,7 +72,8 @@ for tstep = 1 : Nsteps
     for INTRK = 1 : 5
           timelocal = time + rk4c ( INTRK ) * dt;
           %[rhsu] = AdvecRHS1D ( u, timelocal, a );
-
+         
+          % alpha = 1.0 means central flux, and alpha = 0.0 means upwind
           alpha = 1.0;
           du = zeros(Nfp*Nfaces,K);
           %du(:) = (u(vmapM)-u(vmapP)).*(a*nx(:)-(1-alpha)*abs(a*nx(:)))/2;     %original

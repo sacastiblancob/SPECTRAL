@@ -7,9 +7,9 @@
 
 function I=analitica(x,t,nu)
 
-[eta,w] = JacobiGQ(0,0,150);
+[eta,w] = JacobiGQ(0,0,1000);
 
-a = -3;
+a = -1;
 b = -a;
 %I=zeros(1,max(size(x)));
 s = size(x);

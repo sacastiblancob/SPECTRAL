@@ -21,7 +21,8 @@ hold on
 plot(T,Enlf,'LineWidth',1.5)
 hold on
 Ebal = E+Ev+Evf+Enlf;
-Eotro = E+Ev;
+% Eotro = E+Ev;
+Eotro = Ebal;
 plot(T,Eotro,'LineWidth',2)
 legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','Location','eastoutside')
 legend('E','E_{vd}','E_{vf}','E_{nlf}','E+E_{vd}+E_{vf}+E_{nlf}','E1','E_{vd}1','E_{vf}1','E_{nlf}1','E+E_{vd}+E_{vf}+E_{nlf}1','Location','eastoutside')
@@ -34,6 +35,11 @@ ylabel('Energy')
 xlabel('Time')
 grid on
 
+% %Slope of Ebal
+% EbalEsl = zeros(Nsteps+1,1);
+% for i=1:Nsteps
+%     EbalEsl = (Ebal(i+1)-Ebal(i))/dt;
+% end
 
 % % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % % Plot of global energy behaviour by mode a
@@ -394,8 +400,83 @@ sgtitle(strcat('\Omega =',string(ap),'th subdomain'))
 % % title('Solution at t=0.4s')
 % % grid on
 
+%%%%%%%
+
+if epsilon >= 0.00025
+
+Econa = EEta + dEEta + dfEEta + nfEEta;
+% % % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% % % Plot of global energy behaviour ANALYTICAL
+% % % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+figure(8)
+
+hold on
+plot(T,Ea,'LineWidth',1.5)
+hold on
+plot(T,Eva,'LineWidth',1.5)
+hold on
+plot(T,Evfa,'LineWidth',1.5)
+hold on
+plot(T,Enlfa,'LineWidth',1.5)
+hold on
+Ebala = Ea+Eva+Evfa+Enlfa;
+% Eotro = E+Ev;
+Eotroa = Ebala;
+plot(T,Eotroa,'LineWidth',2)
+legend('E a','E_{vd} a','E_{vf} a','E_{nlf} a','E+E_{vd}+E_{vf}+E_{nlf} a','Location','eastoutside')
+legend('E a','E_{vd} a','E_{vf} a','E_{nlf} a','E+E_{vd}+E_{vf}+E_{nlf} a','E1 a','E_{vd}1 a','E_{vf}1 a','E_{nlf}1 a','E+E_{vd}+E_{vf}+E_{nlf}1 a','Location','eastoutside')
+title(strcat('Energy vs Time, \nu=',string(epsilon),', \Omega = whole domain (analytical)'))
+ylim([-E(1)/10 E(1)+E(1)/5])
+% ylim([-0.9 1.4])
+xlim([T(1) T(tstep+1)])
+% xlim([T(1) 0.8])
+ylabel('Energy (analytical)')
+xlabel('Time')
+grid on
+
+%Slope of Ebal
+EbalEsl = zeros(Nsteps+1,1);
+for i=1:Nsteps
+    EbalEsl = (Ebal(i+1)-Ebal(i))/dt;
+end
+
+% % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% % Plot of global energy behaviour by mode a ANALYTICAL
+% % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+figure(9)
+
+ap = 6;
+a = ap;
+
+liminf = min([EEta(:,a);dEEta(:,a);dfEEta(:,a);nfEEta(:,a)])-EEta(1,a)/10;
+limsup = max([EEta(:,a);dEEta(:,a);dfEEta(:,a);nfEEta(:,a)])+EEta(1,a)/1.5;
+
+plot(T,EEta(:,a),'LineWidth',1.5)
+hold on
+plot(T,dEEta(:,a),'LineWidth',1.5)
+plot(T,dfEEta(:,a),'LineWidth',1.5)
+plot(T,nfEEta(:,a),'LineWidth',1.5)
+plot(T,Econa(:,a),'LineWidth',1.5)
+legend('E a','E_{vd} a','E_{vf} a','E_{nlf} a','E+E_{vd}+E_{vf}+E_{nlf} a','Location','eastoutside')
+title(strcat('Energy vs Time, \nu =',string(epsilon),', \Omega = ',string(a),'th domain (analytical)'))
+%ylim([liminf limsup])
+% ylim([-0.22 0.32])
+ylim([-0.3 0.4])
+% ylim([min([EEt(:,a) ; dEEt(:,a); dfEEt(:,a); nfEEt(:,a); Econ(:,a)])-0.05, max([EEt(:,a) ; dEEt(:,a); dfEEt(:,a); nfEEt(:,a); Econ(:,a)])+0.05])
+xlim([T(1) T(tstep+1)])
+%xlim([T(1) 0.8])
+ylabel('Energy  (analytical)')
+xlabel('Time')
+grid on
 
 
+% By computing Eotroa and Eotroaint, which is the balance over analytical
+% with dealeasing 3/2 rule, the norm of the result over all the time is
+% about 1E-2 for two norm, and 1E-4 for Inf norm. Which is insignificant.
+% plot(T,Eotroa,'LineWidth',2)
+% hold on
+% plot(T,Eotroaint,'LineWidth',2)
 
-
-
+end

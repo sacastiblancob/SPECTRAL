@@ -53,7 +53,7 @@ clc;
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 % Order of polymomials used for approximation
-N = 12;
+N = 14;
 
 %Final time
 FinalTime = 1.2;
@@ -71,28 +71,28 @@ iint = 0.0;     %1.0 for immproved integration, 0.0 for not
 filter = 0.0;
 
 % t=0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
-t = 0;          
-if t==2
-    Nc=4;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
-    s=1;           % exponential filter degree
-else
-    Nc = 1;
-    s=6;           % exponential filter degree
-end
+% t = 0;          
+% if t==2
+%     Nc=4;           %when using Lobatto Bassis you should put Nc=3 for preserve 2 first basis functions (because keep the B.C. of subdomains)
+%     s=1;           % exponential filter degree
+% else
+%     Nc = 1;
+%     s=6;           % exponential filter degree
+% end
 
 %viscosity constant
 % epsilon = 0.0;      %original
 % epsilon = 0.001;      %No need of filtering
-epsilon = 0.00006;      %viscosity constant (need of filtering and works)
+% epsilon = 0.0005;      %viscosity constant (need of filtering and works)
 % caso de éxito es epsilon=0.0005, Elements=12, N=16, zeros and
 % filterdiag(i), con RHSm de test
 % epsilon = 0.00025;      %viscosity constant (need of filtering and does not work)
-%epsilon = 0.000001;
+epsilon = 0.0;
 
 % Generate simple mesh
 xL = -1;
 xR = 1;
-Elements = 12;
+Elements = 10;
 [Nv, VX, K, EToV] = MeshGen1D(xL,xR,Elements);
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,6 +114,7 @@ end
 %u = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0;    %original Intitial C.
 %u = (x<-0.5)*2;     %step initial condition
 u = -sin(2*pi*x/(xR-xL));
+ua = u;
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %  Compute time step size
@@ -121,10 +122,10 @@ u = -sin(2*pi*x/(xR-xL));
   xmin = min(abs(x(1,:)-x(2,:)));
   CFL = 0.25;
   umax = max(max(abs(u)));
-  %dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
-  dt = 0.1*CFL*(xmin/umax);
-  %dt = CFL*(xmin/umax);
-  %dt = 0.00005;
+  dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
+%   dt = 0.1*CFL*(xmin/umax);
+%   dt = CFL*(xmin/umax);
+%   dt = 0.0005;
   Nsteps = ceil(FinalTime/dt);
   dt = FinalTime/Nsteps; 
 
@@ -202,7 +203,7 @@ for tstep=1:Nsteps
         %
         %  Penalty scaling -- See Chapter 7.2
         %
-        %  tau = .25*reshape(N*N./max(2*J(vmapP),2*J(vmapM)), Nfp*Nfaces, K);
+%          tau = .25*reshape(N*N./max(2*J(vmapP),2*J(vmapM)), Nfp*Nfaces, K);
         %
           tau = 0.0;
         %
@@ -272,7 +273,7 @@ for tstep=1:Nsteps
     end
     
 %     %computing analytical solution
-%     ua = analitica(x,time+dt,epsilon);
+    ua = analitica(x,time+dt,epsilon);
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % energy storage
 % Stop condition (sometimes useful)
@@ -300,14 +301,14 @@ for tstep=1:Nsteps
     if ( rem ( tstep, 10 ) == 0 )
 
       % Plotting analytical and numerical solutions  
-%      subplot(1,2,1)
-%       %ploting analytical
-%       plot(x,ua,'k')
-%       hold on
-      for i = 1 : Elements
+%       subplot(1,2,1)
+      %ploting analytical
+      plot(x,ua,'k')
+      hold on
+      for ii = 1 : Elements
 %         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
 %           'Markersize', 1, 'LineWidth', 2.0, 'Color','b');
-        plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+        plot ( x(:,ii), u(:,ii), shapestr{1+rem(ii,2)}, ...
           'Markersize', 1, 'LineWidth', 1.5);
         hold all
       end
