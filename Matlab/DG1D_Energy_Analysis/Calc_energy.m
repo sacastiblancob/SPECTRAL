@@ -99,6 +99,58 @@ end
 %     end
 % end
 
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% %Over every subdomain
+% if iint==0
+%     dflux = epsilon.*u([1 N+1],:).*deru([1 N+1],:);
+%     %dflux = 2*epsilon.*u([1 N+1],:);
+%     dflux = (dflux(2,:) - dflux(1,:));
+%     
+%     % over analytical
+%     dfluxa = epsilon.*ua([1 N+1],:).*derua([1 N+1],:);
+%     %dflux = 2*epsilon.*u([1 N+1],:);
+%     dfluxa = (dfluxa(2,:) - dfluxa(1,:));
+% else
+%     dflux = epsilon.*u([1 N+1],:).*deru([1 Nd+1],:);
+%     dflux = (dflux(2,:) - dflux(1,:));
+%     
+%     % over analytical
+%     dfluxa = epsilon.*ua([1 N+1],:).*derua([1 Nd+1],:);
+%     dfluxa = (dfluxa(2,:) - dfluxa(1,:));
+% end
+% %sum(dflux)
+% 
+% %Over every subdomain and mode
+% % if iint==0
+%     dfluxm = zeros(N+1,K);
+%     for i=1:K
+%         dfm = epsilon.*(udum(:,i).*V([1 N+1],:)');
+%         dfluxm(:,i) = (dfm(:,2) - dfm(:,1));
+%     end
+%     
+%     %over analytical
+%     dfluxma = zeros(N+1,K);
+%     for i=1:K
+%         dfma = epsilon.*(uduma(:,i).*V([1 N+1],:)');
+%         dfluxma(:,i) = (dfma(:,2) - dfma(:,1));
+%     end
+% % else
+% %     dfluxm = zeros(Nd+1,K);
+% %     for i=1:K
+% %         dfm = 2*epsilon.*(udum(:,i).*Vd([1 Nd+1],:)');
+% %         dfluxm(:,i) = (dfm(:,2) - dfm(:,1));
+% %     end
+% %     
+% %     %over analytical
+% %     dfluxma = zeros(Nd+1,K);
+% %     for i=1:K
+% %         dfma = 2*epsilon.*(uduma(:,i).*Vd([1 Nd+1],:)');
+% %         dfluxma(:,i) = (dfma(:,2) - dfma(:,1));
+% %     end
+% % end
+
+
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % For non-linear flux over boundaries
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,6 +192,44 @@ nfluxa = -(nfluxa(2,:) - nfluxa(1,:)); %(analytical)
 % end
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% % Over every subdomain
+% nflux = (u([1 N+1],:).^3)./6;
+% nflux = -(nflux(2,:) - nflux(1,:));
+% 
+% nfluxa = (ua([1 N+1],:).^3)./6; %(analytical)
+% nfluxa = -(nfluxa(2,:) - nfluxa(1,:)); %(analytical)
+% 
+% % Over every subdomain and mode
+% % if iint==0
+%     nfluxm = zeros(N+1,K);
+%     for i=1:K
+%         nfm = (1/6)*(u3m(:,i).*V([1 N+1],:)');
+%         nfluxm(:,i) = -(nfm(:,2) - nfm(:,1));
+%     end
+%     
+%     %over analytical
+%     nfluxma = zeros(N+1,K);
+%     for i=1:K
+%         nfma = (1/6)*(u3ma(:,i).*V([1 N+1],:)');
+%         nfluxma(:,i) = -(nfma(:,2) - nfma(:,1));
+%     end
+% % else
+% %     nfluxm = zeros(Nd+1,K);
+% %     for i=1:K
+% %         nfm = (2/3)*(u3m(:,i).*Vd([1 Nd+1],:)');
+% %         nfluxm(:,i) = -(nfm(:,2) - nfm(:,1));
+% %     end
+% %     
+% %     %over analytical
+% %     nfluxma = zeros(Nd+1,K);
+% %     for i=1:K
+% %         nfma = (2/3)*(u3ma(:,i).*Vd([1 Nd+1],:)');
+% %         nfluxma(:,i) = -(nfma(:,2) - nfma(:,1));
+% %     end
+% % end
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % For dissipation term
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -160,6 +250,26 @@ end
 %     edism = -2*epsilon*(invVd*deru).^2.*Jd(1,:);
 %     edisma = -2*epsilon*(invVd*derua).^2.*Jd(1,:); %(analytical)
 % end
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% % For every subdomain
+% if iint==0
+%     edis = -(epsilon*w*(((deru).^2).*J));
+%     edisa = -(epsilon*w*(((derua).^2).*J)); %(analytical)
+% else
+%     edis = -(epsilon*wd*(((deru).^2).*Jd));
+%     edisa = -(epsilon*wd*(((derua).^2).*Jd)); %(analytical)
+% end
+% 
+% %For every subdomain and mode
+% % if iint==0
+%     edism = -epsilon*(invV*(Dr*u./J)).^2.*J(1,:);
+%     edisma = -epsilon*(invV*(Dr*ua./J)).^2.*J(1,:); %(analytical)
+% % else
+% %     edism = -2*epsilon*(invVd*deru).^2.*Jd(1,:);
+% %     edisma = -2*epsilon*(invVd*derua).^2.*Jd(1,:); %(analytical)
+% % end
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

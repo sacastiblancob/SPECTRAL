@@ -48,15 +48,35 @@ clc;
 % clc
 % Globals1D;
 
+filtereo = [2,1,0,2,1,0,2,1,0];
+%2 -> Traditional filter
+%1 -> Energy based filter
+%0 -> No filter
+epsilones = [0.0005,0.0005,0.0005,0.00025,0.00025,0.00025,0.000001,0.000001,0.000001];
+
+elementos = [6,9,12,15];
+
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %CONTROL PANEL
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+% For analyticial computation of uo=-sin(pi*x)
+[etai,wi] = JacobiGQ(0,0,2048);
+% normuv = zeros(13000,18);
+% normuv = normuv*NaN;
+N=22;
+solut = {zeros(N+1,elementos(1)),zeros(N+1,elementos(1)),zeros(N+1,elementos(2)),...
+    zeros(N+1,elementos(2)),zeros(N+1,elementos(3)),zeros(N+1,elementos(3)),...
+    zeros(N+1,elementos(4)),zeros(N+1,elementos(4))};
+
+
+for iii=1:4
+
 % Order of polymomials used for approximation
-N = 14;
+% N = 22;
 
 %Final time
-FinalTime = 1.2;
+FinalTime = 0.6;
 
 %dealiasing??
 deal = 0.0;     %1.0 for dealiasing, 0.0 for non-dealiasing
@@ -68,7 +88,16 @@ iint = 0.0;     %1.0 for immproved integration, 0.0 for not
 %init Filter matrix
 %filter = ?
 %1.0 for filtering, 0.0 for non-filtering
-filter = 0.0;
+% if filtereo(iii) == 2
+%     filter = 1;
+% else
+    filter = 0;
+% end
+% if filtereo(iii) == 1
+    filtere = 1;
+% else
+%     filtere = 0;
+% end
 
 % t=0 for Non-Unitary, 1 for unitary, 2 for Lobatto Basis.
 % t = 0;          
@@ -87,12 +116,14 @@ filter = 0.0;
 % caso de éxito es epsilon=0.0005, Elements=12, N=16, zeros and
 % filterdiag(i), con RHSm de test
 % epsilon = 0.00025;      %viscosity constant (need of filtering and does not work)
-epsilon = 0.0;
+epsilon = 0.000001;
+% epsilon = epsilones(iii);
 
 % Generate simple mesh
 xL = -1;
 xR = 1;
-Elements = 10;
+% Elements = 10;
+Elements = elementos(iii);
 [Nv, VX, K, EToV] = MeshGen1D(xL,xR,Elements);
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -105,7 +136,9 @@ StartUp1D;
 % Filter matrix F
 if filter==1.0
     %last parameter (t) means type,
-    [F,L] = Filter1D(N,Nc,s,t,V,W,r);
+    Ncf = 1;
+    s = N/2;
+    [F,L] = Filter1D(N,Ncf,s,0,V,W,r);
 end
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,13 +147,24 @@ end
 %u = - tanh ( ( x + 0.5 ) / ( 2 * epsilon ) ) + 1.0;    %original Intitial C.
 %u = (x<-0.5)*2;     %step initial condition
 u = -sin(2*pi*x/(xR-xL));
+% u = x;
+% uab = 2;
+% uaa = 1;
+% xao = -0.5;
+% u(x<=xao) = uab;
+% u(x>xao) = uaa;
+uo = u;
 ua = u;
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %  Compute time step size
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   xmin = min(abs(x(1,:)-x(2,:)));
-  CFL = 0.25;
+  if epsilon <= 0.0001
+  CFL = 0.1;
+  else
+  CFL = 1.0;
+  end
   umax = max(max(abs(u)));
   dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
 %   dt = 0.1*CFL*(xmin/umax);
@@ -129,17 +173,27 @@ ua = u;
   Nsteps = ceil(FinalTime/dt);
   dt = FinalTime/Nsteps; 
 
+  
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %  Initial Energy
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   Init_energy
   modes = (0:N)';
-  
+
+%%%%%%%%
+%limits for integration within analytical
+if epsilon > 0.001
+    ai = -3;
+else
+    ai = -2;
+end
+%%%%%%%%
+
 %
 %  Outer time step loop 
 %
-  figure ( 1 );
-  shapestr = { '-o','-x' };
+%   figure ( 1 );
+%   shapestr = { '-o','-x' };
 
 for tstep=1:Nsteps
 
@@ -165,11 +219,13 @@ for tstep=1:Nsteps
         %
           %uin =-tanh((xL+0.5-time) / (2*epsilon)) + 1.0;   %original
           uin = 0;                     %Dirichlet = 0
-          %uin = u((N+1)*Elements);      %Periodic
+%           uin = uab;                    %Dirichlet for step function
+%           uin = u((N+1)*Elements);      %Periodic
           du(mapI) = 2.0*(u(vmapI)-uin);
           %uout=-tanh((xR+0.5-time) / (2*epsilon)) + 1.0;   %original
           uout = 0;                    %Dirichlet = 0
-          %uout = u((N+1)*Elements);     %Periodic
+%           uout = uaa;                   %Dirichlet for step function
+%           uout = u((N+1)*Elements);     %Periodic
           du(mapO) = 2.0*(u(vmapO) - uout);
         %
         %  Compute Q.
@@ -273,7 +329,8 @@ for tstep=1:Nsteps
     end
     
 %     %computing analytical solution
-    ua = analitica(x,time+dt,epsilon);
+    ua = analitica(x,time+dt,epsilon,etai,wi,ai);      %-sin(pi*x)
+%     ua = analitica2(x,time+dt,uab,uaa,xao);          %Inviscid Burgers with step
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % energy storage
 % Stop condition (sometimes useful)
@@ -289,46 +346,51 @@ for tstep=1:Nsteps
         %u = F*u;
     end
     
+%    % storing norm
+%    normuv(tstep,iii*3-2) = time;
+%    normuv(tstep,iii*3-1) = norm(abs(u-ua));
+%    normuv(tstep,iii*3) = norm(abs(u-ua),'Inf');
+%     
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Advancing time  
     time = time + dt;
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % Plotting
-    %
-    %  Display solution on every 10th time step.
-    %
-    if ( rem ( tstep, 10 ) == 0 )
-
-      % Plotting analytical and numerical solutions  
-%       subplot(1,2,1)
-      %ploting analytical
-      plot(x,ua,'k')
-      hold on
-      for ii = 1 : Elements
-%         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
-%           'Markersize', 1, 'LineWidth', 2.0, 'Color','b');
-        plot ( x(:,ii), u(:,ii), shapestr{1+rem(ii,2)}, ...
-          'Markersize', 1, 'LineWidth', 1.5);
-        hold all
-      end
-      grid ( 'on' );
-      axis ( [ xL, xR, uBott, uUp ] );
-      
-      drawnow;
-      hold off
-      
-%      plot ( xv, ustv, 'Markersize', 1, 'LineWidth', 1.5, 'Color','r');
-      
-%       % Plotting energy by frequency
-%       subplot(1,2,2)
-%       plot(modes,Etom);
-%       xlim([-0.1 N+0.1]);
-%       ylim([0 0.2]);
-%       legend('1','2','3','4','5','6','7','8','9','10','11','12')
-%       drawnow
-      
-    end
+%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   % Plotting
+%     %
+%     %  Display solution on every 10th time step.
+%     %
+%     if ( rem ( tstep, 10 ) == 0 )
+% 
+%       % Plotting analytical and numerical solutions  
+% %       subplot(1,2,1)
+%       %ploting analytical
+%       plot(x,ua,'k')
+%       hold on
+%       for ii = 1 : Elements
+% %         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+% %           'Markersize', 1, 'LineWidth', 2.0, 'Color','b');
+%         plot ( x(:,ii), u(:,ii), shapestr{1+rem(ii,2)}, ...
+%           'Markersize', 1, 'LineWidth', 1.5);
+%         hold all
+%       end
+%       grid ( 'on' );
+%       axis ( [ xL, xR, uBott, uUp ] );
+%       
+%       drawnow;
+%       hold off
+%       
+% %      plot ( xv, ustv, 'Markersize', 1, 'LineWidth', 1.5, 'Color','r');
+%       
+% %       % Plotting energy by frequency
+% %       subplot(1,2,2)
+% %       plot(modes,Etom);
+% %       xlim([-0.1 N+0.1]);
+% %       ylim([0 0.2]);
+% %       legend('1','2','3','4','5','6','7','8','9','10','11','12')
+% %       drawnow
+%       
+%     end
     %pause(0.05)
     
     %ploting
@@ -342,7 +404,11 @@ for tstep=1:Nsteps
 
 end
 
-Postprocessing
+solut{1,iii*2-1} = x;
+solut{1,iii*2} = u;
+
+end
+%Postprocessing
 
 %end Burgers1D subroutine
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

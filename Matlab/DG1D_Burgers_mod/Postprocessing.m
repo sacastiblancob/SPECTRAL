@@ -47,7 +47,7 @@ grid on
 
 figure(3)
 
-ap = 6;
+ap = 4;
 a = ap;
 
 liminf = min([EEt(:,a);dEEt(:,a);dfEEt(:,a);nfEEt(:,a)])-EEt(1,a)/10;
@@ -447,7 +447,7 @@ end
 
 figure(9)
 
-ap = 6;
+% ap = 6;
 a = ap;
 
 liminf = min([EEta(:,a);dEEta(:,a);dfEEta(:,a);nfEEta(:,a)])-EEta(1,a)/10;

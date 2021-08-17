@@ -1,9 +1,10 @@
 % loading results
 % load('RES_ana.mat')
-load('RES_ana2.mat')
+load('RES_ana_full.mat')
 
 %variables
-Nes = 9:3:50;
+% Nes = 9:3:50;
+Nes = 10:50;
 % Kes = [1 2 3 4 7 10 13 16];
 Kes = 1:16;
 epsilons = [0.05 0.01 0.0050 0.001 0.0005 0.00025];
