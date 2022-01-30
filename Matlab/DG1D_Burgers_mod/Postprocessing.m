@@ -71,13 +71,13 @@ ylabel('Energy')
 xlabel('Time')
 grid on
 
-%%% Proofs
-eo = EEt(1,:);
-eom = EEtm(:,:,1);
-pt = 1000;
-e_sum = EEt(pt,:) + dEEt(pt,:) + dfEEt(pt,:) + nfEEt(pt,:);
-e_summ = EEtm(:,pt) + dEEtm(:,pt) + dfEEtm(:,pt) + nfEEtm(:,pt);
-e_m = sum(e_summ);
+% %%% Proofs
+% eo = EEt(1,:);
+% eom = EEtm(:,:,1);
+% pt = 1000;
+% e_sum = EEt(pt,:) + dEEt(pt,:) + dfEEt(pt,:) + nfEEt(pt,:);
+% e_summ = EEtm(:,pt) + dEEtm(:,pt) + dfEEtm(:,pt) + nfEEtm(:,pt);
+% e_m = sum(e_summ);
 
 % %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % %Hovmoller plots
@@ -480,3 +480,24 @@ grid on
 % plot(T,Eotroaint,'LineWidth',2)
 
 end
+
+%%%%%%%
+figure(201)
+plot(T,Ebala1,'-','Color','Black')
+hold all
+plot(T,Ebala2,'-','Color',[80/255 80/255 80/255])
+plot(T,Ebala3,'-','Color',[160/255 160/255 160/255])
+plot(T,Ebala4,'--','Color','Black')
+plot(T,Ebala5,'--','Color',[80/255 80/255 80/255])
+plot(T,Ebala6,'--','Color',[160/255 160/255 160/255])
+xline(1/pi,':','t_c','LineWidth',1.5)
+legend('R_e = 40','R_e = 200','R_e = 400','R_e = 2000','R_e = 4000','R_e = 8000','t_c','Location','Southwest','FontSize',8)
+grid on
+% title("Numerical Energy Rule - Anlytical Solution")
+xlabel('Time')
+ylabel('Energy')
+
+
+
+
+

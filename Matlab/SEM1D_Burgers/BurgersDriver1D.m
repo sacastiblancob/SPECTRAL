@@ -12,7 +12,7 @@ Globals1D;
 %%
 %CONTROL PANEL
 % Order of polymomials used for approximation
-N = 50;
+N = 48;
 
 %Final time
 FinalTime = 1.2;
@@ -37,13 +37,13 @@ end
 
 %viscosity constant
 %epsilon = 0.01;
-nu = 0.0005;
+nu = 0.00025;
 epsilon = nu;
 
 % Generate simple mesh
 xL = -1.0;
 xR = 1.0;
-Elements = 10;
+Elements = 9;
 [Nv, VX, K, EToV] = MeshGen1D(xL,xR,Elements);
 %END CONTROL PANEL
 
@@ -94,7 +94,7 @@ uUp = max(max(u)) + 0.1;
   CFL = 1.0;
   umax = max(max(abs(u)));
   %dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
-  dt = 0.1*CFL*(xmin/umax);
+%   dt = 2*CFL*(xmin/umax);
   dt = 0.0025;
   %dt = CFL*(xmin/umax);
   %dt = 3.1776e-04;
@@ -118,6 +118,9 @@ uUp = max(max(u)) + 0.1;
   shapestr = { '-o','-x' };
   
 for tstep=1:Nsteps
+%     if time >= (1/pi)
+%         pause
+%     end
     for INTRK = 1:5
       timelocal = time + rk4c(INTRK)*dt;
       

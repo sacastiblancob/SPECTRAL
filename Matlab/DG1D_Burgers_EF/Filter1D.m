@@ -1,14 +1,14 @@
-function [F,filterdiag] = Filter1D(N,Nc,s,t,V,W,r)
+function [F,filterdiag] = Filter1D(N,Nc,s,V,W,alp)
 % function [F] = Filter1D(N,Nc,s)
 % Purpose : Initialize 1D filter matrix of size N.
 % Order of exponential filter is (even) s with cutoff at Nc;
 % N = Max. polynomial degree (order of interpolation)
 % Nc = Number of low frequencies to remain intact
 % s = Filter order
-% t = type of filter, =0 Non-Unitary (Classical), =1 Unitary (Sumedh)
+% tf = type of filter, =0 Non-Unitary (Classical), =1 Unitary (Sumedh)
+% alp = alpha constant of exponential filter
     
     filterdiag = ones(N+1,1);
-    alp = -log(eps);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Theory
@@ -30,22 +30,7 @@ function [F,filterdiag] = Filter1D(N,Nc,s,t,V,W,r)
         filterdiag(i+1) = exp(-alp*((i-Nc)/(N-Nc))^s);
     end
     
-%     % Step filter
-%     for i=Nc:N
-%         filterdiag(i) = 0.0;
-%     end
-    
-    %t==0 means non-unitary filter
-    %t==1 means Sumedh Unitary filter
-    %t==2 means Lobatto Basis filter
-    if t==0    
-        F = V*spdiags(filterdiag,0,N+1,N+1)*(C*V'*W);
-    elseif t==1
-        VU = sqrt(W)*V*sqrt(C);
-        F = VU*spdiags(filterdiag,0,N+1,N+1)*VU';
-    elseif t==2
-        VL = Basis2(r,N);
-        F = VL*spdiags(filterdiag,0,N+1,N+1)*inv(VL);
-    end
-        
+    F = V*spdiags(filterdiag,0,N+1,N+1)*(C*V'*W);
+         
 return;
+end

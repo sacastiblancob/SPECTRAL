@@ -7,7 +7,7 @@ function [F,filterdiag] = Filter1D(N,Nc,s,t,V,W,r)
 % s = Filter order
 % t = type of filter, =0 Non-Unitary (Classical), =1 Unitary (Sumedh)
     
-    filterdiag = ones(N+1,1);
+   filterdiag = ones(N+1,1);
     alp = -log(eps);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

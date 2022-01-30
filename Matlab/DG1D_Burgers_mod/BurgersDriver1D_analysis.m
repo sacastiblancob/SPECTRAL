@@ -56,7 +56,7 @@ clc;
 [etai,wi] = JacobiGQ(0,0,2040);
 
 % Order of polymomials used for approximation
-N = 15;
+N = 12;
 
 %Final time
 FinalTime = 1.2;
@@ -90,7 +90,7 @@ filter = 0.0;
 % caso de éxito es epsilon=0.0005, Elements=12, N=16, zeros and
 % filterdiag(i), con RHSm de test
 % epsilon = 0.00025;      %viscosity constant (need of filtering and does not work)
-epsilon = 0.005;
+epsilon = 0.01;
 
 % Generate simple mesh
 xL = -1;
@@ -130,14 +130,14 @@ ua = u;
 %  Compute time step size
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   xmin = min(abs(x(1,:)-x(2,:)));
-  CFL = 0.1;
+  CFL = 1.0;
   umax = max(max(abs(u)));
-  dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
+%   dt = CFL* min(xmin/umax,xmin^2/sqrt(epsilon));     %original
 %   dt = 0.1*CFL*(xmin/umax);
 %   dt = CFL*(xmin/umax);
-%   dt = 0.0005;
+  dt = 0.001;
   Nsteps = ceil(FinalTime/dt);
-  dt = FinalTime/Nsteps; 
+%   dt = FinalTime/Nsteps; 
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %  Initial Energy
@@ -159,13 +159,22 @@ end
 %
   figure ( 1 );
   shapestr = { '-o','-x' };
+  plot(x,ua,'r')
+  grid ( 'on' );
+  axis ( [ xL, xR, uBott, uUp ] );
+  xlabel('X')
+  ylabel('U')
+  title('Analytical Solution, \nu=0.01, u_0=-sin(\pi x)')
+  drawnow
+  pause(20)
+  
 
 for tstep=1:Nsteps
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % Going into RK4
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-%     if time >= 0.4
+%     if time >= (1/pi)
 %         pause
 %     end
     for INTRK = 1:5
@@ -326,17 +335,20 @@ for tstep=1:Nsteps
 %       subplot(1,2,1)
       %ploting analytical
       plot(x,ua,'k')
-      hold on
-      for ii = 1 : Elements
-%         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
-%           'Markersize', 1, 'LineWidth', 2.0, 'Color','b');
-        plot ( x(:,ii), u(:,ii), shapestr{1+rem(ii,2)}, ...
-          'Markersize', 1, 'LineWidth', 1.5);
-        hold all
-      end
+      xlabel('X')
+      ylabel('U')
+      title('Analytical Solution, \nu=0.01, u_0=-sin(\pi x)')
       grid ( 'on' );
       axis ( [ xL, xR, uBott, uUp ] );
-      
+      hold on
+%       for ii = 1 : Elements
+% %         plot ( x(:,i), u(:,i), shapestr{1+rem(i,2)}, ...
+% %           'Markersize', 1, 'LineWidth', 2.0, 'Color','b');
+%         plot ( x(:,ii), u(:,ii), shapestr{1+rem(ii,2)}, ...
+%           'Markersize', 1, 'LineWidth', 1.5);
+%         hold all
+%       end
+            
       drawnow;
       hold off
       
@@ -364,7 +376,7 @@ for tstep=1:Nsteps
 
 end
 
-Postprocessing
+% Postprocessing
 
 %end Burgers1D subroutine
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

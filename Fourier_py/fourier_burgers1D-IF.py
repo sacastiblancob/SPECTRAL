@@ -5,13 +5,16 @@
 #Universidad Nacional de Colombia
 #Ingeniería Civil
 
-#This code solve the advection-diffusion-reaction equation 1D
-#               dC/dt + u dc/dx = D d2c/dx2 + r*c
+#This code solve the Burgers' equation 1D
+#               du/dt + u du/dx = nu d2u/dxu
 #Time discretization: First order (Euler)
 #
 # =============================================================================
 # Import libraries and setting the folder direction
 # =============================================================================
+#
+# Solved with Integrating Factor technique
+#
 
 import os
 import sys
@@ -42,9 +45,7 @@ else:
     K = np.linspace(-int(N/2),int(N/2),N)
 
 #constants
-u = 0.5
-D = 0.01
-r = 0.0
+nu = 0.01
 
 #Time grid
 to = 0.1
@@ -58,15 +59,18 @@ dt = t[1] - t[0]
 # =============================================================================
 
 #Storage vectors
-C = np.zeros((N,Ts))
+U = np.zeros((N,Ts))
 A = np.zeros((N,Ts))
-CM = np.zeros((N,Ts))
+UM = np.zeros((N,Ts))
 E = np.zeros(Ts,dtype=np.complex)
 error = np.zeros((N,Ts))
 
 #Initial conditions
 #a = np.pi/2
 a = 0
+
+U[:,0]
+
 C[:,0] = 10/np.sqrt(4*np.pi*D*(to))*np.exp(-((x+a)**2)/(4*D*(to)))
 A[:,0] = 10/np.sqrt(4*np.pi*D*(to))*np.exp(-((x+a)**2)/(4*D*(to)))
             #Analytical of advection-diffusion equation
@@ -85,24 +89,51 @@ Com = FT(C[:,0],N)
 E[0] = np.sum(np.abs(Com)**2)
 CM[:,0] = np.abs(Com)
 
-#Integrator factor
-gamma = -1j*K*u - D*K**2 - r
-I = np.exp(1*gamma*dt)
+# #Integrator factor
+# gamma = -1j*K*u - D*K**2 - r
+# I = np.exp(1*gamma*dt)
+
+plt.ion()
+style.use('ggplot')
+plt.figure(1, figsize=(11.5, 11.5))
+
+fig1 = plt.subplot(1, 1, 1)
+fig1.set_xlim(x[0], L)
+fig1.set_ylim([np.floor(np.min(C[:,0]))-1,np.ceil(np.max(C[:,0]))+1])
+fig1.set_xlabel(r'x')
+fig1.set_ylabel(r'C')
+fig1.set_title('Advection-Diffusion-Reaction , Fourier-Galerkin')
 
 #Time loop
 for time in range(1,Ts):
+    #Integrator factor
+    gamma = -1j*K*u - D*K**2 - r
+    I = np.exp(1*gamma*dt)
     Cm = I*Com
     CM[:,time] = np.abs(Cm)
     E[time] = np.sum(np.abs(Cm)**2)
     C[:,time] = IFT(Cm,N)
 #    A[:,time] = 16*np.exp(-8*(x-(t[time]-to)*u)**2)
 #    A[:,time] = np.cos(2*(x-(t[time])*u))
-    A[:,time] = 10/np.sqrt(4*np.pi*D*(t[time]))*np.exp(-((x+a-u*(t[time]-to))**2)/(4*D*(t[time])))
+    # A[:,time] = 10/np.sqrt(4*np.pi*D*(t[time]))*np.exp(-((x+a-u*(t[time]-to))**2)/(4*D*(t[time])))
             #Analytical of advection-diffusion equation
     error[:,time] = np.abs(C[:,time]-A[:,time])
     Com = Cm
-print(error[:,Ts-1])
-print(E)
+    
+    plt.clf()
+    fig1 = plt.subplot(1, 1, 1)
+    fig1.set_xlim(x[0], x[N-1])
+    fig1.set_ylim([np.floor(np.min(C[:,0]))-1,np.ceil(np.max(C[:,0]))+1])
+    fig1.set_xlabel(r'x')
+    fig1.set_ylabel(r'C')
+    fig1.set_title('Advection-Diffusion-Reaction , Fourier-Galerkin')
+    plot1 = fig1.plot(x,C[:,time])
+    
+    plt.draw()
+    plt.pause(0.01)
+    
+# print(error[:,Ts-1])
+# print(E)
 # =============================================================================
 # Plotting
 # =============================================================================
@@ -129,29 +160,29 @@ print(E)
 #    fig1.set_title('Energy Spectrum of F (-N/2 to N/2)')
 
 
-plt.ion()
-style.use('ggplot')
-plt.figure(1, figsize=(11.5, 11.5))
+# plt.ion()
+# style.use('ggplot')
+# plt.figure(1, figsize=(11.5, 11.5))
 
-fig1 = plt.subplot(1, 1, 1)
-fig1.set_xlim(x[0], L)
-fig1.set_ylim([np.floor(np.min(C[:,0]))-1,np.ceil(np.max(C[:,0]))+1])
-fig1.set_xlabel(r'x')
-fig1.set_ylabel(r'C')
-fig1.set_title('Advection-Diffusion-Reaction , Fourier-Galerkin')
+# fig1 = plt.subplot(1, 1, 1)
+# fig1.set_xlim(x[0], L)
+# fig1.set_ylim([np.floor(np.min(C[:,0]))-1,np.ceil(np.max(C[:,0]))+1])
+# fig1.set_xlabel(r'x')
+# fig1.set_ylabel(r'C')
+# fig1.set_title('Advection-Diffusion-Reaction , Fourier-Galerkin')
 
-for i in range(0,Ts):
+# for i in range(0,Ts):
     
-    plt.clf()
-    fig1 = plt.subplot(1, 1, 1)
-    fig1.set_xlim(x[0], x[N-1])
-    fig1.set_ylim([np.floor(np.min(C[:,0]))-1,np.ceil(np.max(C[:,0]))+1])
-    fig1.set_xlabel(r'x')
-    fig1.set_ylabel(r'C')
-    fig1.set_title('Advection-Diffusion-Reaction , Fourier-Galerkin')
-    plot1 = fig1.plot(x,C[:,i])
-#    plot2 = fig1.plot(x,A[:,i])
-#    fig2.tick_params(axis='both', which='major', labelsize=6)
+#     plt.clf()
+#     fig1 = plt.subplot(1, 1, 1)
+#     fig1.set_xlim(x[0], x[N-1])
+#     fig1.set_ylim([np.floor(np.min(C[:,0]))-1,np.ceil(np.max(C[:,0]))+1])
+#     fig1.set_xlabel(r'x')
+#     fig1.set_ylabel(r'C')
+#     fig1.set_title('Advection-Diffusion-Reaction , Fourier-Galerkin')
+#     plot1 = fig1.plot(x,C[:,i])
+# #    plot2 = fig1.plot(x,A[:,i])
+# #    fig2.tick_params(axis='both', which='major', labelsize=6)
 
-    plt.draw()
-    plt.pause(0.1)
+#     plt.draw()
+#     plt.pause(0.1)
